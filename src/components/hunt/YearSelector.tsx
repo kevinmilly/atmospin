@@ -8,8 +8,8 @@ interface YearSelectorProps {
 /** Temporary year selector — will be replaced by ChronoDial in Phase 5 */
 export function YearSelector({ year, onChange }: YearSelectorProps) {
   const displayYear = year < 0
-    ? `${Math.abs(year)} BCE`
-    : `${year} CE`
+    ? `${Math.abs(year)} BC`
+    : `${year} AD`
 
   return (
     <div className="space-y-2">
@@ -29,8 +29,8 @@ export function YearSelector({ year, onChange }: YearSelectorProps) {
         className="w-full accent-indigo-500"
       />
       <div className="flex justify-between text-xs text-slate-500">
-        <span>3000 BCE</span>
-        <span>2025 CE</span>
+        <span>3000 BC</span>
+        <span>2025 AD</span>
       </div>
     </div>
   )

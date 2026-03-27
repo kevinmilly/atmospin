@@ -81,7 +81,7 @@ export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOver
           <p className="text-xs text-slate-400">Correct Answer</p>
           <p className="text-sm font-semibold text-white">{challenge.event.title}</p>
           <p className="text-xs text-slate-400">
-            {challenge.location.name}, {challenge.location.country} — {challenge.event.year_start < 0 ? `${Math.abs(challenge.event.year_start)} BCE` : challenge.event.year_start} CE
+            {challenge.location.name}, {challenge.location.country} — {challenge.event.year_start < 0 ? `${Math.abs(challenge.event.year_start)} BC` : `${challenge.event.year_start} AD`}
           </p>
           {challenge.fun_fact && (
             <p className="text-xs text-indigo-300 mt-2 italic">{challenge.fun_fact}</p>

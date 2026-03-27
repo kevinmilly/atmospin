@@ -1,19 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronUp, ChevronDown } from 'lucide-react'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import { GlobeControls } from '@/components/globe/GlobeControls'
+import type { HuntChallenge, HistoricalEvent, Location, GlobePoint } from '@/types'
+import type { HuntPhase } from '@/store/hunt'
 import { PromptCard } from '@/components/hunt/PromptCard'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
 import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { YearSelector } from '@/components/hunt/YearSelector'
 import { ResultOverlay } from '@/components/hunt/ResultOverlay'
 import { useHunt } from '@/hooks/useHunt'
-import { useGlobeStore } from '@/store/globe'
-
 export function HuntView() {
   const navigate = useNavigate()
-  const zoomTier = useGlobeStore(s => s.zoomTier)
 
   const {
     phase,
@@ -45,11 +44,6 @@ export function HuntView() {
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        {phase === 'hunting' && (
-          <span className="text-sm font-medium text-slate-400">
-            Zoom: Tier {zoomTier}
-          </span>
-        )}
       </header>
 
       {/* Globe fills the view */}
@@ -75,31 +69,18 @@ export function HuntView() {
         <PromptCard challenge={challenge} onStart={startHunting} />
       )}
 
-      {/* Hunting UI — bottom panel */}
+      {/* Hunting UI — bottom panel (collapsible) */}
       {phase === 'hunting' && challenge && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl p-4 space-y-4 max-h-[50vh] overflow-y-auto">
-          {/* Challenge prompt reminder */}
-          <p className="text-sm text-slate-300 leading-relaxed line-clamp-2">
-            {challenge.prompt_text}
-          </p>
-
-          {/* Year selector */}
-          <YearSelector year={playerYear} onChange={setPlayerYear} />
-
-          {/* Hints */}
-          <HintDrawer
-            hints={challenge.hints}
-            hintsRevealed={hintsRevealed}
-            onRevealHint={useHint}
-          />
-
-          {/* Submit */}
-          <SubmitButton
-            playerPin={playerPin}
-            onSubmit={submitAnswer}
-            disabled={phase !== 'hunting'}
-          />
-        </div>
+        <HuntPanel
+          challenge={challenge}
+          playerPin={playerPin}
+          playerYear={playerYear}
+          setPlayerYear={setPlayerYear}
+          hintsRevealed={hintsRevealed}
+          useHint={useHint}
+          submitAnswer={submitAnswer}
+          phase={phase}
+        />
       )}
 
       {/* Submitting state */}
@@ -120,6 +101,65 @@ export function HuntView() {
           onNextHunt={loadChallenge}
         />
       )}
+    </div>
+  )
+}
+
+/** Collapsible bottom panel for hunt controls */
+function HuntPanel({
+  challenge,
+  playerPin,
+  playerYear,
+  setPlayerYear,
+  hintsRevealed,
+  useHint,
+  submitAnswer,
+  phase,
+}: {
+  challenge: HuntChallenge & { event: HistoricalEvent; location: Location }
+  playerPin: GlobePoint | null
+  playerYear: number
+  setPlayerYear: (y: number) => void
+  hintsRevealed: number
+  useHint: () => void
+  submitAnswer: () => void
+  phase: HuntPhase
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl">
+      {/* Drag handle / expand toggle */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-center pt-2 pb-1 text-slate-500"
+      >
+        {expanded ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+      </button>
+
+      <div className="px-4 pb-4 space-y-3">
+        {/* Always visible: prompt + year + submit */}
+        <p className="text-sm text-slate-300 leading-relaxed line-clamp-2">
+          {challenge.prompt_text}
+        </p>
+
+        <YearSelector year={playerYear} onChange={setPlayerYear} />
+
+        <SubmitButton
+          playerPin={playerPin}
+          onSubmit={submitAnswer}
+          disabled={phase !== 'hunting'}
+        />
+
+        {/* Expanded: hints */}
+        {expanded && (
+          <HintDrawer
+            hints={challenge.hints}
+            hintsRevealed={hintsRevealed}
+            onRevealHint={useHint}
+          />
+        )}
+      </div>
     </div>
   )
 }
