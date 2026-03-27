@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Globe, Trophy, Compass } from 'lucide-react'
+import { Globe, Trophy, Compass, MapPin } from 'lucide-react'
 
 export function HomeView() {
   const navigate = useNavigate()
@@ -25,6 +25,13 @@ export function HomeView() {
         >
           <Compass className="w-5 h-5" />
           Start Hunt
+        </button>
+        <button
+          onClick={() => navigate('/globe-spin')}
+          className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
+        >
+          <MapPin className="w-5 h-5" />
+          Globe Spin
         </button>
         <button
           onClick={() => navigate('/leaderboard')}

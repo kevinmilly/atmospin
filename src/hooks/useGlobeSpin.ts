@@ -1,0 +1,86 @@
+import { useCallback } from 'react'
+import { useGlobeSpinStore } from '@/store/globeSpin'
+import { useGlobeStore } from '@/store/globe'
+import { haversineDistance, calcDistanceScore, calcTotalScore } from '@/engine/huntEngine'
+import { haptics } from '@/lib/haptics'
+import { seedGeoChallenges } from '@/data/seed-geography'
+import type { GlobePoint } from '@/types'
+
+let lastIndex = -1
+
+export function useGlobeSpin() {
+  const {
+    phase, setPhase,
+    challenge, setChallenge,
+    playerPin, setPlayerPin,
+    hintsRevealed, revealHint,
+    scoreResult, setScoreResult,
+    roundsPlayed, sessionScore, addRoundScore,
+    reset,
+  } = useGlobeSpinStore()
+
+  const setGlobePin = useGlobeStore(s => s.setPin)
+
+  const loadChallenge = useCallback(() => {
+    reset()
+    setGlobePin(null)
+
+    let idx: number
+    do {
+      idx = Math.floor(Math.random() * seedGeoChallenges.length)
+    } while (idx === lastIndex && seedGeoChallenges.length > 1)
+    lastIndex = idx
+
+    setChallenge(seedGeoChallenges[idx])
+    setPhase('prompt')
+  }, [reset, setGlobePin, setChallenge, setPhase])
+
+  const startHunting = useCallback(() => {
+    setPhase('hunting')
+  }, [setPhase])
+
+  const placePin = useCallback((point: GlobePoint) => {
+    if (phase !== 'hunting') return
+    setPlayerPin(point)
+    setGlobePin(point)
+    haptics.pin()
+  }, [phase, setPlayerPin, setGlobePin])
+
+  const submitAnswer = useCallback(() => {
+    if (!challenge || !playerPin) return
+
+    haptics.lockIn()
+    setPhase('submitted')
+
+    const target: GlobePoint = {
+      lat: challenge.location.lat,
+      lng: challenge.location.lng,
+    }
+
+    const distanceKm = Math.round(haversineDistance(playerPin, target))
+    const distanceScore = calcDistanceScore(distanceKm)
+    const totalScore = calcTotalScore(distanceScore, 0, hintsRevealed)
+
+    const result = { distanceKm, distanceScore, hintsUsed: hintsRevealed, totalScore }
+    setScoreResult(result)
+    addRoundScore(totalScore)
+
+    setTimeout(() => {
+      if (totalScore > 700) haptics.correct()
+      else if (totalScore < 200) haptics.incorrect()
+      setPhase('result')
+    }, 600)
+  }, [challenge, playerPin, hintsRevealed, setPhase, setScoreResult, addRoundScore])
+
+  const useHint = useCallback(() => {
+    if (phase !== 'hunting') return
+    revealHint()
+  }, [phase, revealHint])
+
+  return {
+    phase, challenge, playerPin, hintsRevealed,
+    scoreResult, roundsPlayed, sessionScore,
+    loadChallenge, startHunting, placePin,
+    submitAnswer, useHint,
+  }
+}

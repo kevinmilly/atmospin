@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/app'
 
 const HomeView = lazy(() => import('@/views/HomeView').then(m => ({ default: m.HomeView })))
 const HuntView = lazy(() => import('@/views/HuntView').then(m => ({ default: m.HuntView })))
+const GlobeSpinView = lazy(() => import('@/views/GlobeSpinView').then(m => ({ default: m.GlobeSpinView })))
 const LeaderboardView = lazy(() => import('@/views/LeaderboardView').then(m => ({ default: m.LeaderboardView })))
 
 function ScreenLoader() {
@@ -45,6 +46,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomeView />} />
             <Route path="/hunt" element={<HuntView />} />
+            <Route path="/globe-spin" element={<GlobeSpinView />} />
             <Route path="/leaderboard" element={<LeaderboardView />} />
           </Routes>
         </Suspense>
