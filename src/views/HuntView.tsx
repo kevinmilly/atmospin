@@ -8,9 +8,10 @@ import type { HuntPhase } from '@/store/hunt'
 import { PromptCard } from '@/components/hunt/PromptCard'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
 import { SubmitButton } from '@/components/hunt/SubmitButton'
-import { YearSelector } from '@/components/hunt/YearSelector'
+import { ChronoDial } from '@/components/chrono/ChronoDial'
 import { ResultOverlay } from '@/components/hunt/ResultOverlay'
 import { useHunt } from '@/hooks/useHunt'
+
 export function HuntView() {
   const navigate = useNavigate()
 
@@ -29,14 +30,12 @@ export function HuntView() {
     useHint,
   } = useHunt()
 
-  // Load first challenge on mount
   useEffect(() => {
     loadChallenge()
   }, [loadChallenge])
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden">
-      {/* Header overlay */}
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 p-4">
         <button
           onClick={() => navigate('/')}
@@ -46,7 +45,6 @@ export function HuntView() {
         </button>
       </header>
 
-      {/* Globe fills the view */}
       <div className="flex-1">
         <GlobeCanvas
           onGlobeClick={placePin}
@@ -55,21 +53,14 @@ export function HuntView() {
         />
       </div>
 
-      {/* Globe controls — only during hunting */}
       {phase === 'hunting' && (
-        <GlobeControls
-          onZoomIn={() => {}}
-          onZoomOut={() => {}}
-          onRecenter={() => {}}
-        />
+        <GlobeControls onZoomIn={() => {}} onZoomOut={() => {}} onRecenter={() => {}} />
       )}
 
-      {/* Prompt overlay */}
       {phase === 'prompt' && challenge && (
         <PromptCard challenge={challenge} onStart={startHunting} />
       )}
 
-      {/* Hunting UI — bottom panel (collapsible) */}
       {phase === 'hunting' && challenge && (
         <HuntPanel
           challenge={challenge}
@@ -83,7 +74,6 @@ export function HuntView() {
         />
       )}
 
-      {/* Submitting state */}
       {phase === 'submitted' && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/50">
           <div className="text-center">
@@ -93,28 +83,16 @@ export function HuntView() {
         </div>
       )}
 
-      {/* Result overlay */}
       {phase === 'result' && scoreResult && challenge && (
-        <ResultOverlay
-          scoreResult={scoreResult}
-          challenge={challenge}
-          onNextHunt={loadChallenge}
-        />
+        <ResultOverlay scoreResult={scoreResult} challenge={challenge} onNextHunt={loadChallenge} />
       )}
     </div>
   )
 }
 
-/** Collapsible bottom panel for hunt controls */
 function HuntPanel({
-  challenge,
-  playerPin,
-  playerYear,
-  setPlayerYear,
-  hintsRevealed,
-  useHint,
-  submitAnswer,
-  phase,
+  challenge, playerPin, playerYear, setPlayerYear,
+  hintsRevealed, useHint, submitAnswer, phase,
 }: {
   challenge: HuntChallenge & { event: HistoricalEvent; location: Location }
   playerPin: GlobePoint | null
@@ -129,7 +107,6 @@ function HuntPanel({
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl">
-      {/* Drag handle / expand toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-center pt-2 pb-1 text-slate-500"
@@ -138,12 +115,14 @@ function HuntPanel({
       </button>
 
       <div className="px-4 pb-4 space-y-3">
-        {/* Always visible: prompt + year + submit */}
         <p className="text-sm text-slate-300 leading-relaxed line-clamp-2">
           {challenge.prompt_text}
         </p>
 
-        <YearSelector year={playerYear} onChange={setPlayerYear} />
+        {/* Chrono-Dial */}
+        <div className="flex justify-center">
+          <ChronoDial year={playerYear} onChange={setPlayerYear} />
+        </div>
 
         <SubmitButton
           playerPin={playerPin}
@@ -151,7 +130,6 @@ function HuntPanel({
           disabled={phase !== 'hunting'}
         />
 
-        {/* Expanded: hints */}
         {expanded && (
           <HintDrawer
             hints={challenge.hints}

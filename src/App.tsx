@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useAppStore } from '@/store/app'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 const HomeView = lazy(() => import('@/views/HomeView').then(m => ({ default: m.HomeView })))
 const HuntView = lazy(() => import('@/views/HuntView').then(m => ({ default: m.HuntView })))
@@ -39,6 +40,7 @@ function UpdateBanner() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <UpdateBanner />
       <div className="h-full">
@@ -52,5 +54,6 @@ export default function App() {
         </Suspense>
       </div>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }

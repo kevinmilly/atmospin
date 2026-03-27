@@ -1,11 +1,28 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Globe, Trophy, Compass, MapPin } from 'lucide-react'
+import { Globe, Trophy, Compass, MapPin, Download, LogIn, LogOut, WifiOff } from 'lucide-react'
+import { useInstallPrompt } from '@/hooks/useInstallPrompt'
+import { useOffline } from '@/hooks/useOffline'
+import { useAuth } from '@/hooks/useAuth'
+import { AuthModal } from '@/components/auth/AuthModal'
 
 export function HomeView() {
   const navigate = useNavigate()
+  const { isInstallable, install } = useInstallPrompt()
+  const isOffline = useOffline()
+  const { isAuthenticated, user, signOut } = useAuth()
+  const [showAuth, setShowAuth] = useState(false)
 
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-8 p-6">
+    <div className="h-full flex flex-col items-center justify-center gap-8 p-6 relative">
+      {/* Offline banner */}
+      {isOffline && (
+        <div className="absolute top-4 left-4 right-4 bg-amber-900/50 border border-amber-700 rounded-lg px-3 py-2 flex items-center gap-2">
+          <WifiOff className="w-4 h-4 text-amber-400" />
+          <span className="text-xs text-amber-200">Offline — playing with cached content</span>
+        </div>
+      )}
+
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Globe className="w-10 h-10 text-indigo-400" />
@@ -42,9 +59,41 @@ export function HomeView() {
         </button>
       </div>
 
+      {/* Bottom actions */}
+      <div className="flex items-center gap-3">
+        {isInstallable && (
+          <button
+            onClick={install}
+            className="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Install App
+          </button>
+        )}
+        {isAuthenticated ? (
+          <button
+            onClick={signOut}
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            {user?.email?.split('@')[0] ?? 'Sign Out'}
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowAuth(true)}
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            Sign In
+          </button>
+        )}
+      </div>
+
       <p className="text-slate-600 text-xs">
         Spin the globe. Set the era. Pin the moment.
       </p>
+
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </div>
   )
 }
