@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronUp, ChevronDown, Globe, Star } from 'lucide-react'
+import { ArrowLeft, Globe, Star } from 'lucide-react'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import { GlobeControls } from '@/components/globe/GlobeControls'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
@@ -136,22 +136,12 @@ function SpinPanel({
   playerPin: { lat: number; lng: number } | null
   submitAnswer: () => void
 }) {
-  const [expanded, setExpanded] = useState(false)
-
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-center pt-2 pb-1 text-slate-500"
-      >
-        {expanded ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-      </button>
-      <div className="px-4 pb-4 space-y-3">
+      <div className="px-4 py-4 space-y-3 max-h-[45vh] overflow-y-auto">
         <p className="text-sm text-slate-300 leading-relaxed">{prompt}</p>
+        <HintDrawer hints={hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
         <SubmitButton playerPin={playerPin} onSubmit={submitAnswer} />
-        {expanded && (
-          <HintDrawer hints={hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
-        )}
       </div>
     </div>
   )
