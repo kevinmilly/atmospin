@@ -23,10 +23,11 @@ const COUNTRY_COLORS = [
 interface GlobeCanvasProps {
   onGlobeClick?: (point: GlobePoint) => void
   pinPoint?: GlobePoint | null
+  correctPoint?: GlobePoint | null
   interactive?: boolean
 }
 
-export function GlobeCanvas({ onGlobeClick, pinPoint, interactive = true }: GlobeCanvasProps) {
+export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive = true }: GlobeCanvasProps) {
   const globeRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
   const containerRef = useRef<HTMLDivElement>(null)
   const [countries, setCountries] = useState<CountryFeature[]>([])
@@ -88,11 +89,22 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, interactive = true }: Glob
     onGlobeClick?.({ lat, lng })
   }, [onGlobeClick, interactive])
 
-  // Pin marker data
+  // Pin marker data — player pin (red) + correct answer pin (green)
   const pinData = useMemo(() => {
-    if (!pinPoint) return []
-    return [{ lat: pinPoint.lat, lng: pinPoint.lng }]
-  }, [pinPoint])
+    const pins: { lat: number; lng: number; color: string; size: number }[] = []
+    if (pinPoint) pins.push({ lat: pinPoint.lat, lng: pinPoint.lng, color: '#f43f5e', size: 0.6 })
+    if (correctPoint) pins.push({ lat: correctPoint.lat, lng: correctPoint.lng, color: '#22c55e', size: 0.8 })
+    return pins
+  }, [pinPoint, correctPoint])
+
+  // Arc between player pin and correct answer
+  const arcData = useMemo(() => {
+    if (!pinPoint || !correctPoint) return []
+    return [{
+      startLat: pinPoint.lat, startLng: pinPoint.lng,
+      endLat: correctPoint.lat, endLng: correctPoint.lng,
+    }]
+  }, [pinPoint, correctPoint])
 
   // Polygon colors
   const getPolygonCapColor = useCallback((d: object) => {
@@ -143,10 +155,21 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, interactive = true }: Glob
           pointsData={pinData}
           pointLat="lat"
           pointLng="lng"
-          pointColor={() => '#f43f5e'}
+          pointColor="color"
           pointAltitude={0.12}
-          pointRadius={0.6}
+          pointRadius="size"
           pointsTransitionDuration={200}
+          arcsData={arcData}
+          arcStartLat="startLat"
+          arcStartLng="startLng"
+          arcEndLat="endLat"
+          arcEndLng="endLng"
+          arcColor={() => ['#f43f5e', '#22c55e']}
+          arcStroke={1.5}
+          arcDashLength={0.4}
+          arcDashGap={0.2}
+          arcDashAnimateTime={1500}
+          arcsTransitionDuration={500}
           animateIn={true}
           waitForGlobeReady={true}
         />

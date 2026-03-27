@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronUp, ChevronDown } from 'lucide-react'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
@@ -34,6 +34,13 @@ export function HuntView() {
     loadChallenge()
   }, [loadChallenge])
 
+  const correctPoint = useMemo(() => {
+    if ((phase === 'result' || phase === 'submitted') && challenge) {
+      return { lat: challenge.location.lat, lng: challenge.location.lng }
+    }
+    return null
+  }, [phase, challenge])
+
   return (
     <div className="h-full flex flex-col relative overflow-hidden">
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 p-4">
@@ -49,6 +56,7 @@ export function HuntView() {
         <GlobeCanvas
           onGlobeClick={placePin}
           pinPoint={playerPin}
+          correctPoint={correctPoint}
           interactive={phase === 'hunting'}
         />
       </div>
