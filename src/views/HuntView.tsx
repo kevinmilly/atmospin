@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronUp, ChevronDown } from 'lucide-react'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
-import { GlobeControls } from '@/components/globe/GlobeControls'
 import type { HuntChallenge, HistoricalEvent, Location, GlobePoint } from '@/types'
 import type { HuntPhase } from '@/store/hunt'
 import { PromptCard } from '@/components/hunt/PromptCard'
@@ -42,11 +41,12 @@ export function HuntView() {
   }, [phase, challenge])
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden">
+    <div className="h-full flex flex-col relative overflow-hidden touch-manipulation">
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 p-4">
         <button
           onClick={() => navigate('/')}
-          className="w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+          aria-label="Back to home"
+          className="w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -61,9 +61,7 @@ export function HuntView() {
         />
       </div>
 
-      {phase === 'hunting' && (
-        <GlobeControls onZoomIn={() => {}} onZoomOut={() => {}} onRecenter={() => {}} />
-      )}
+      {/* Globe controls removed — pinch-to-zoom handles zoom natively */}
 
       {phase === 'prompt' && challenge && (
         <PromptCard challenge={challenge} onStart={startHunting} />
@@ -86,7 +84,7 @@ export function HuntView() {
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/50">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-slate-300 mt-3 text-sm">Calculating score...</p>
+            <p className="text-slate-300 mt-3 text-sm">Calculating score&hellip;</p>
           </div>
         </div>
       )}
@@ -114,10 +112,11 @@ function HuntPanel({
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl">
+    <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-center pt-2 pb-1 text-slate-500"
+        aria-label={expanded ? 'Collapse hints' : 'Expand hints'}
+        className="w-full flex items-center justify-center pt-2 pb-1 text-slate-500 focus-visible:ring-2 focus-visible:ring-indigo-400"
       >
         {expanded ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
       </button>

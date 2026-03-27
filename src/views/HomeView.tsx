@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Globe, Trophy, Compass, MapPin, Download, LogIn, LogOut, WifiOff } from 'lucide-react'
+import { Trophy, Compass, MapPin, Download, LogIn, LogOut, WifiOff } from 'lucide-react'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOffline } from '@/hooks/useOffline'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,7 +14,7 @@ export function HomeView() {
   const [showAuth, setShowAuth] = useState(false)
 
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-8 p-6 relative">
+    <div className="h-full flex flex-col items-center justify-center gap-8 p-6 relative overflow-hidden">
       {/* Offline banner */}
       {isOffline && (
         <div className="absolute top-4 left-4 right-4 bg-amber-900/50 border border-amber-700 rounded-lg px-3 py-2 flex items-center gap-2">
@@ -23,36 +23,33 @@ export function HomeView() {
         </div>
       )}
 
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <Globe className="w-10 h-10 text-indigo-400" />
-          <h1 className="text-4xl font-bold tracking-tight text-white">
-            The Weave
-          </h1>
-        </div>
-        <p className="text-slate-400 text-lg max-w-sm">
-          Navigate time and space. Hunt the moment that shaped the world.
-        </p>
+      {/* Logo splash */}
+      <div className="flex flex-col items-center gap-2">
+        <img
+          src="/logo-title.png"
+          alt="Atmospin — Locate the moment. Tune the world."
+          className="w-64 max-w-[80vw] object-contain drop-shadow-[0_0_32px_rgba(56,189,248,0.4)]"
+        />
       </div>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
           onClick={() => navigate('/hunt')}
-          className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
+          className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
         >
           <Compass className="w-5 h-5" />
           Start Hunt
         </button>
         <button
           onClick={() => navigate('/globe-spin')}
-          className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
+          className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
         >
           <MapPin className="w-5 h-5" />
           Globe Spin
         </button>
         <button
           onClick={() => navigate('/leaderboard')}
-          className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-4 px-6 rounded-xl transition-colors"
+          className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-slate-500 text-slate-200 font-semibold py-4 px-6 rounded-xl transition-colors"
         >
           <Trophy className="w-5 h-5" />
           Leaderboard
@@ -88,10 +85,6 @@ export function HomeView() {
           </button>
         )}
       </div>
-
-      <p className="text-slate-600 text-xs">
-        Spin the globe. Set the era. Pin the moment.
-      </p>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </div>

@@ -33,13 +33,13 @@ export function AuthModal({ onClose }: AuthModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6 overscroll-contain" role="dialog" aria-modal="true">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-white">
             {mode === 'signin' ? 'Sign In' : 'Create Account'}
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button onClick={onClose} aria-label="Close" className="text-slate-400 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 rounded-lg p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -52,7 +52,9 @@ export function AuthModal({ onClose }: AuthModalProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+              autoComplete="email"
+              spellCheck={false}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-500"
             />
           </div>
           <div>
@@ -63,7 +65,8 @@ export function AuthModal({ onClose }: AuthModalProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-500"
             />
           </div>
 
@@ -77,7 +80,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
           >
             {mode === 'signin' ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-            {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {loading ? 'Signing in\u2026' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 

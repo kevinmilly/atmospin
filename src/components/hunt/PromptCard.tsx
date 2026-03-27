@@ -37,7 +37,7 @@ export function PromptCard({ challenge, onStart }: PromptCardProps) {
 
         <button
           onClick={onStart}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+          className="w-full bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
         >
           Start Hunting
         </button>

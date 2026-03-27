@@ -21,7 +21,7 @@ export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOver
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
-      <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 max-w-lg mx-auto space-y-4 animate-slide-up`}>
+      <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-w-lg mx-auto space-y-4 animate-slide-up`}>
         {/* Rating + Score */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOver
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-white">{scoreResult.totalScore}</p>
+            <p className="text-3xl font-bold text-white tabular-nums">{scoreResult.totalScore}</p>
             <p className="text-xs text-slate-400">/ 1500</p>
           </div>
         </div>
@@ -71,7 +71,7 @@ export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOver
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
             <div>
               <p className="text-sm text-white font-medium">{challenge.event.title}</p>
-              <p className="text-xs text-slate-400">{challenge.location.name}, {challenge.location.country} — {challenge.event.year_start}</p>
+              <p className="text-xs text-slate-400">{challenge.location.name === challenge.location.country ? challenge.location.name : `${challenge.location.name}, ${challenge.location.country}`} — {challenge.event.year_start}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOver
 
         <button
           onClick={onNextHunt}
-          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-white font-semibold py-3 rounded-xl transition-colors"
         >
           Next Hunt
           <ArrowRight className="w-4 h-4" />

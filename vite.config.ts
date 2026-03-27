@@ -12,9 +12,9 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'The Weave',
-        short_name: 'The Weave',
-        description: 'Chronospatial geography & history learning game',
+        name: 'Atmospin',
+        short_name: 'Atmospin',
+        description: 'Locate the moment. Tune the world.',
         theme_color: '#0f172a',
         background_color: '#020617',
         display: 'standalone',

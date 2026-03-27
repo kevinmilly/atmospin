@@ -2,7 +2,6 @@ import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Globe, Star } from 'lucide-react'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
-import { GlobeControls } from '@/components/globe/GlobeControls'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
 import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { SpinResultOverlay } from '@/components/hunt/SpinResultOverlay'
@@ -31,11 +30,12 @@ export function GlobeSpinView() {
   }, [phase, challenge])
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden">
+    <div className="h-full flex flex-col relative overflow-hidden touch-manipulation">
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4">
         <button
           onClick={() => navigate('/')}
-          className="w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+          aria-label="Back to home"
+          className="w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -55,9 +55,7 @@ export function GlobeSpinView() {
         />
       </div>
 
-      {phase === 'hunting' && (
-        <GlobeControls onZoomIn={() => {}} onZoomOut={() => {}} onRecenter={() => {}} />
-      )}
+      {/* Globe controls removed — pinch-to-zoom handles zoom natively */}
 
       {phase === 'prompt' && challenge && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6">
@@ -87,8 +85,8 @@ export function GlobeSpinView() {
       )}
 
       {phase === 'hunting' && challenge && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl">
-          <div className="px-4 py-3 space-y-2 max-h-[35vh] overflow-y-auto">
+        <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
+          <div className="px-4 py-3 space-y-2 max-h-[35vh] overflow-y-auto overscroll-contain">
             <p className="text-sm text-slate-300 leading-relaxed">{challenge.prompt}</p>
             <HintDrawer hints={challenge.hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
             <SubmitButton playerPin={playerPin} onSubmit={submitAnswer} />

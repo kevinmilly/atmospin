@@ -16,7 +16,7 @@ export function SubmitButton({ playerPin, onSubmit, disabled }: SubmitButtonProp
       disabled={!canSubmit}
       className={`w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-semibold text-sm transition-all ${
         canSubmit
-          ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30'
+          ? 'bg-emerald-600 hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-white shadow-lg shadow-emerald-900/30'
           : 'bg-slate-800 text-slate-500 cursor-not-allowed'
       }`}
     >

@@ -9,6 +9,10 @@
     box-sizing: border-box;
   }
 
+  html {
+    color-scheme: dark;
+  }
+
   html, body, #root {
     height: 100%;
     margin: 0;
@@ -28,4 +32,14 @@
 
 .animate-slide-up {
   animation: slide-up 0.4s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up {
+    animation: none;
+  }
+
+  .animate-spin {
+    animation: none;
+  }
 }

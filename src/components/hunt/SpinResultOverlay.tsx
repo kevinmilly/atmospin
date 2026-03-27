@@ -23,7 +23,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
-      <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 max-w-lg mx-auto space-y-4 animate-slide-up`}>
+      <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-w-lg mx-auto space-y-4 animate-slide-up`}>
         {/* Rating + Score — compact horizontal layout */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-white">{scoreResult.totalScore}</p>
+            <p className="text-3xl font-bold text-white tabular-nums">{scoreResult.totalScore}</p>
             <p className="text-xs text-slate-400">points</p>
           </div>
         </div>
@@ -58,7 +58,9 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
             <p className="text-sm text-white font-medium">
-              {challenge.location.name}, {challenge.location.country}
+              {challenge.location.name === challenge.location.country
+                ? challenge.location.name
+                : `${challenge.location.name}, ${challenge.location.country}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -81,12 +83,12 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
 
         {/* Session stats + Next */}
         <div className="flex items-center gap-3">
-          <div className="text-xs text-slate-500">
-            R{roundsPlayed} &middot; {sessionScore} total
+          <div className="text-xs text-slate-400 tabular-nums whitespace-nowrap">
+            Round {roundsPlayed} &middot; {sessionScore} pts
           </div>
           <button
             onClick={onNextRound}
-            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-white font-semibold py-3 rounded-xl transition-colors"
           >
             Next Round
             <ArrowRight className="w-4 h-4" />
