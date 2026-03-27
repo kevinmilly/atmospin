@@ -1,0 +1,102 @@
+[
+  {
+    "location": { "name": "Bethel", "lat": 41.6998, "lng": -74.9226, "country": "United States", "continent": "North America", "type": "landmark" },
+    "event": { "title": "Woodstock Music Festival", "description": "A three-day music festival that became a defining moment of the 1960s counterculture movement, attracting over 400,000 people to a dairy farm.", "year_start": 1969, "era": "Modern", "tags": ["music", "culture", "1960s"] }
+  },
+  {
+    "location": { "name": "Berlin", "lat": 52.5163, "lng": 13.3777, "country": "Germany", "continent": "Europe", "type": "city" },
+    "event": { "title": "Fall of the Berlin Wall", "description": "The opening of the Berlin Wall marked the symbolic end of the Cold War and the beginning of German reunification.", "year_start": 1989, "era": "Modern", "tags": ["politics", "cold war", "reunification"] }
+  },
+  {
+    "location": { "name": "Giza", "lat": 29.9792, "lng": 31.1342, "country": "Egypt", "continent": "Africa", "type": "landmark" },
+    "event": { "title": "Construction of the Great Pyramid", "description": "The Great Pyramid of Giza was built as a tomb for Pharaoh Khufu, remaining the tallest man-made structure for over 3,800 years.", "year_start": -2560, "era": "Ancient", "tags": ["architecture", "ancient egypt", "wonder"] }
+  },
+  {
+    "location": { "name": "Hiroshima", "lat": 34.3853, "lng": 132.4553, "country": "Japan", "continent": "Asia", "type": "city" },
+    "event": { "title": "Atomic Bombing of Hiroshima", "description": "The first nuclear weapon used in warfare was dropped on Hiroshima, leading to Japan's surrender and the end of World War II.", "year_start": 1945, "era": "Modern", "tags": ["war", "nuclear", "wwii"] }
+  },
+  {
+    "location": { "name": "Kitty Hawk", "lat": 36.0826, "lng": -75.7055, "country": "United States", "continent": "North America", "type": "landmark" },
+    "event": { "title": "First Powered Flight", "description": "The Wright Brothers achieved the first sustained, controlled, powered heavier-than-air flight on a sandy strip of land.", "year_start": 1903, "era": "Modern", "tags": ["aviation", "invention", "technology"] }
+  },
+  {
+    "location": { "name": "Tenochtitlan (Mexico City)", "lat": 19.4326, "lng": -99.1332, "country": "Mexico", "continent": "North America", "type": "city" },
+    "event": { "title": "Fall of Tenochtitlan", "description": "Spanish conquistador Hernán Cortés and his allies besieged and conquered the Aztec capital, one of the largest cities in the world at the time.", "year_start": 1521, "era": "Renaissance", "tags": ["colonization", "aztec", "conquest"] }
+  },
+  {
+    "location": { "name": "Cape Canaveral", "lat": 28.5721, "lng": -80.6480, "country": "United States", "continent": "North America", "type": "landmark" },
+    "event": { "title": "Apollo 11 Moon Landing Launch", "description": "Apollo 11 launched from this site carrying the first humans to walk on the Moon.", "year_start": 1969, "era": "Modern", "tags": ["space", "nasa", "moon"] }
+  },
+  {
+    "location": { "name": "Pompeii", "lat": 40.7462, "lng": 14.4989, "country": "Italy", "continent": "Europe", "type": "landmark" },
+    "event": { "title": "Eruption of Mount Vesuvius", "description": "Mount Vesuvius erupted catastrophically, burying the Roman cities of Pompeii and Herculaneum under volcanic ash and pumice.", "year_start": 79, "era": "Ancient", "tags": ["volcano", "disaster", "roman"] }
+  },
+  {
+    "location": { "name": "Philadelphia", "lat": 39.9486, "lng": -75.1499, "country": "United States", "continent": "North America", "type": "city" },
+    "event": { "title": "Signing of the Declaration of Independence", "description": "Representatives of the thirteen American colonies adopted the Declaration of Independence, asserting sovereignty from Britain.", "year_start": 1776, "era": "Early Modern", "tags": ["politics", "independence", "revolution"] }
+  },
+  {
+    "location": { "name": "Agra", "lat": 27.1751, "lng": 78.0421, "country": "India", "continent": "Asia", "type": "landmark" },
+    "event": { "title": "Completion of the Taj Mahal", "description": "Mughal Emperor Shah Jahan completed this ivory-white marble mausoleum as a memorial to his late wife Mumtaz Mahal.", "year_start": 1653, "era": "Early Modern", "tags": ["architecture", "mughal", "monument"] }
+  },
+  {
+    "location": { "name": "Normandy", "lat": 49.3375, "lng": -0.8787, "country": "France", "continent": "Europe", "type": "region" },
+    "event": { "title": "D-Day Invasion", "description": "Allied forces launched the largest seaborne invasion in history on the beaches of Normandy, opening a second front in WWII Europe.", "year_start": 1944, "era": "Modern", "tags": ["war", "wwii", "invasion"] }
+  },
+  {
+    "location": { "name": "Chernobyl", "lat": 51.3890, "lng": 30.0992, "country": "Ukraine", "continent": "Europe", "type": "landmark" },
+    "event": { "title": "Chernobyl Nuclear Disaster", "description": "Reactor No. 4 at the Chernobyl Nuclear Power Plant exploded during a safety test, causing the worst nuclear disaster in history.", "year_start": 1986, "era": "Modern", "tags": ["disaster", "nuclear", "soviet"] }
+  },
+  {
+    "location": { "name": "Machu Picchu", "lat": -13.1631, "lng": -72.5450, "country": "Peru", "continent": "South America", "type": "landmark" },
+    "event": { "title": "Construction of Machu Picchu", "description": "The Inca emperor Pachacuti built this mountaintop citadel as a royal estate high in the Andes.", "year_start": 1450, "era": "Pre-Columbian", "tags": ["architecture", "inca", "wonder"] }
+  },
+  {
+    "location": { "name": "Runnymede", "lat": 51.4445, "lng": -0.5638, "country": "United Kingdom", "continent": "Europe", "type": "landmark" },
+    "event": { "title": "Signing of the Magna Carta", "description": "King John of England was forced to sign this charter of rights, establishing the principle that everyone, including the king, was subject to law.", "year_start": 1215, "era": "Medieval", "tags": ["politics", "law", "rights"] }
+  },
+  {
+    "location": { "name": "Wuhan", "lat": 30.5928, "lng": 114.3055, "country": "China", "continent": "Asia", "type": "city" },
+    "event": { "title": "First Reports of COVID-19", "description": "Health authorities identified a cluster of pneumonia cases caused by a novel coronavirus, which would become a global pandemic.", "year_start": 2019, "era": "Modern", "tags": ["pandemic", "health", "virus"] }
+  },
+  {
+    "location": { "name": "Johannesburg", "lat": -26.2041, "lng": 28.0473, "country": "South Africa", "continent": "Africa", "type": "city" },
+    "event": { "title": "Nelson Mandela Released from Prison", "description": "After 27 years of imprisonment, anti-apartheid leader Nelson Mandela walked free, leading to the end of apartheid.", "year_start": 1990, "era": "Modern", "tags": ["politics", "civil rights", "apartheid"] }
+  },
+  {
+    "location": { "name": "Constantinople (Istanbul)", "lat": 41.0082, "lng": 28.9784, "country": "Turkey", "continent": "Europe", "type": "city" },
+    "event": { "title": "Fall of Constantinople", "description": "Ottoman Sultan Mehmed II conquered the Byzantine capital, ending the Roman Empire after over 1,500 years and reshaping the Mediterranean world.", "year_start": 1453, "era": "Medieval", "tags": ["war", "ottoman", "byzantine"] }
+  },
+  {
+    "location": { "name": "Tunguska", "lat": 60.9020, "lng": 101.9570, "country": "Russia", "continent": "Asia", "type": "region" },
+    "event": { "title": "Tunguska Event", "description": "A massive explosion flattened 2,000 square kilometers of Siberian forest, believed to have been caused by an airburst of a meteor or comet fragment.", "year_start": 1908, "era": "Modern", "tags": ["space", "disaster", "mystery"] }
+  },
+  {
+    "location": { "name": "Galápagos Islands", "lat": -0.9538, "lng": -90.9656, "country": "Ecuador", "continent": "South America", "type": "region" },
+    "event": { "title": "Darwin's Visit to the Galápagos", "description": "Charles Darwin arrived at these volcanic islands aboard HMS Beagle, where observations of unique wildlife would later inspire his theory of evolution.", "year_start": 1835, "era": "Early Modern", "tags": ["science", "evolution", "biology"] }
+  },
+  {
+    "location": { "name": "Roswell", "lat": 33.3943, "lng": -104.5230, "country": "United States", "continent": "North America", "type": "city" },
+    "event": { "title": "Roswell UFO Incident", "description": "A rancher discovered unusual debris on his property, sparking decades of UFO conspiracy theories after the military initially reported recovering a 'flying disc.'", "year_start": 1947, "era": "Modern", "tags": ["mystery", "military", "ufo"] }
+  },
+  {
+    "location": { "name": "Easter Island", "lat": -27.1127, "lng": -109.3497, "country": "Chile", "continent": "South America", "type": "landmark" },
+    "event": { "title": "Creation of the Moai Statues", "description": "The Rapa Nui people carved and transported nearly 900 massive stone statues across the island, an engineering feat that still mystifies researchers.", "year_start": 1250, "era": "Medieval", "tags": ["architecture", "mystery", "polynesian"] }
+  },
+  {
+    "location": { "name": "Lascaux", "lat": 45.0514, "lng": 1.1686, "country": "France", "continent": "Europe", "type": "landmark" },
+    "event": { "title": "Creation of the Lascaux Cave Paintings", "description": "Prehistoric humans created stunning cave paintings of animals and geometric shapes, among the finest examples of Paleolithic art ever discovered.", "year_start": -15000, "era": "Prehistoric", "tags": ["art", "prehistoric", "cave"] }
+  },
+  {
+    "location": { "name": "Mecca", "lat": 21.4225, "lng": 39.8262, "country": "Saudi Arabia", "continent": "Asia", "type": "city" },
+    "event": { "title": "The Hijra - Birth of the Islamic Calendar", "description": "Prophet Muhammad and his followers migrated from Mecca to Medina, an event so significant it marks year one of the Islamic calendar.", "year_start": 622, "era": "Medieval", "tags": ["religion", "islam", "migration"] }
+  },
+  {
+    "location": { "name": "Versailles", "lat": 48.8049, "lng": 2.1204, "country": "France", "continent": "Europe", "type": "landmark" },
+    "event": { "title": "Signing of the Treaty of Versailles", "description": "The treaty formally ending World War I was signed in the Hall of Mirrors, imposing heavy reparations on Germany and redrawing European borders.", "year_start": 1919, "era": "Modern", "tags": ["war", "wwi", "treaty"] }
+  },
+  {
+    "location": { "name": "Tiananmen Square", "lat": 39.9054, "lng": 116.3976, "country": "China", "continent": "Asia", "type": "landmark" },
+    "event": { "title": "Tiananmen Square Protests", "description": "Pro-democracy protesters occupied the largest public square for weeks before a military crackdown that drew worldwide condemnation.", "year_start": 1989, "era": "Modern", "tags": ["politics", "protest", "democracy"] }
+  }
+]
