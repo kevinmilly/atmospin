@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, Compass, MapPin, Download, LogIn, LogOut, WifiOff } from 'lucide-react'
+import { Trophy, Compass, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen } from 'lucide-react'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOffline } from '@/hooks/useOffline'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { OnboardingModal } from '@/components/ui/OnboardingModal'
+
+const ONBOARDING_KEY = 'atmospin_onboarded'
 
 export function HomeView() {
   const navigate = useNavigate()
@@ -12,6 +15,12 @@ export function HomeView() {
   const isOffline = useOffline()
   const { isAuthenticated, user, signOut } = useAuth()
   const [showAuth, setShowAuth] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY))
+
+  function closeOnboarding() {
+    localStorage.setItem(ONBOARDING_KEY, '1')
+    setShowOnboarding(false)
+  }
 
   return (
     <div className="h-full flex flex-col items-center justify-center gap-8 p-6 relative overflow-hidden">
@@ -57,7 +66,14 @@ export function HomeView() {
       </div>
 
       {/* Bottom actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors"
+        >
+          <BookOpen className="w-4 h-4" />
+          Instructions
+        </button>
         {isInstallable && (
           <button
             onClick={install}
@@ -87,6 +103,7 @@ export function HomeView() {
       </div>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showOnboarding && <OnboardingModal onClose={closeOnboarding} />}
     </div>
   )
 }
