@@ -85,9 +85,9 @@ export function GlobeSpinView() {
       )}
 
       {phase === 'hunting' && challenge && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
-          <div className="px-4 py-3 space-y-2 max-h-[35vh] overflow-y-auto overscroll-contain">
-            <p className="text-sm text-slate-300 leading-relaxed">{challenge.prompt}</p>
+        <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/90 backdrop-blur-sm border-t border-slate-700/60 rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
+          <div className="px-4 pt-3 pb-2 space-y-2">
+            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 select-none">{challenge.prompt}</p>
             <HintDrawer hints={challenge.hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
             <SubmitButton playerPin={playerPin} onSubmit={submitAnswer} />
           </div>

@@ -12,9 +12,11 @@ interface SpinResultOverlayProps {
 
 function getRating(score: number): { label: string; color: string; bg: string; icon: typeof Sparkles } {
   if (score >= 900) return { label: 'Bullseye!', color: 'text-emerald-400', bg: 'from-emerald-950/80 to-slate-900/95', icon: Target }
-  if (score >= 600) return { label: 'Great Shot!', color: 'text-blue-400', bg: 'from-blue-950/80 to-slate-900/95', icon: Sparkles }
-  if (score >= 300) return { label: 'Getting Closer', color: 'text-amber-400', bg: 'from-amber-950/60 to-slate-900/95', icon: MapPin }
-  return { label: 'Way Off!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
+  if (score >= 700) return { label: 'Great Shot!', color: 'text-blue-400', bg: 'from-blue-950/80 to-slate-900/95', icon: Sparkles }
+  if (score >= 500) return { label: 'Not Bad!', color: 'text-cyan-400', bg: 'from-cyan-950/60 to-slate-900/95', icon: MapPin }
+  if (score >= 300) return { label: 'Getting Warmer', color: 'text-amber-400', bg: 'from-amber-950/60 to-slate-900/95', icon: MapPin }
+  if (score >= 100) return { label: 'Way Off!', color: 'text-orange-400', bg: 'from-orange-950/60 to-slate-900/95', icon: CircleX }
+  return { label: 'On Another Continent!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
 }
 
 export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessionScore, onNextRound }: SpinResultOverlayProps) {
@@ -28,7 +30,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-              scoreResult.totalScore >= 600 ? 'bg-emerald-500/20' : scoreResult.totalScore >= 300 ? 'bg-amber-500/20' : 'bg-red-500/20'
+              scoreResult.totalScore >= 700 ? 'bg-emerald-500/20' : scoreResult.totalScore >= 300 ? 'bg-amber-500/20' : 'bg-red-500/20'
             }`}>
               <Icon className={`w-6 h-6 ${rating.color}`} />
             </div>
@@ -47,7 +49,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
         <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-1000 ${
-              scoreResult.totalScore >= 600 ? 'bg-emerald-500' : scoreResult.totalScore >= 300 ? 'bg-amber-500' : 'bg-red-500'
+              scoreResult.totalScore >= 700 ? 'bg-emerald-500' : scoreResult.totalScore >= 300 ? 'bg-amber-500' : 'bg-red-500'
             }`}
             style={{ width: `${Math.min(100, (scoreResult.totalScore / 1000) * 100)}%` }}
           />

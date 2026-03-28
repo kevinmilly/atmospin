@@ -15,9 +15,9 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180
 }
 
-/** Calculate distance score: 1000 at exact, 0 at 500km+ */
+/** Calculate distance score: 1000 at exact, exponential decay (~447 at 1200km, ~36 at 5000km) */
 export function calcDistanceScore(distanceKm: number): number {
-  return Math.max(0, Math.round(1000 - distanceKm * 2))
+  return Math.max(0, Math.round(1000 * Math.exp(-distanceKm / 1500)))
 }
 
 /** Calculate time score: 500 at exact year, 0 at 100+ years off */
