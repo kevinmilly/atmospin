@@ -26,7 +26,7 @@ function getRating(score: number) {
   if (score >= 500) return { label: 'Not Bad!', color: 'text-cyan-400', bg: 'from-cyan-950/60 to-slate-900/95', icon: MapPin }
   if (score >= 300) return { label: 'Getting Warmer', color: 'text-amber-400', bg: 'from-amber-950/60 to-slate-900/95', icon: MapPin }
   if (score >= 100) return { label: 'Way Off!', color: 'text-orange-400', bg: 'from-orange-950/60 to-slate-900/95', icon: CircleX }
-  return { label: 'On Another Continent!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
+  return { label: 'Way Off Course!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
 }
 
 /** Animate a number from 0 to target over ~900ms */

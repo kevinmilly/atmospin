@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Globe, Star, ChevronDown, Grip, Flame } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
+import { music } from '@/lib/music'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
 import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { SpinResultOverlay } from '@/components/hunt/SpinResultOverlay'
@@ -29,7 +30,16 @@ export function GlobeSpinView() {
   useEffect(() => {
     loadChallenge()
     setPanelOpen(false)
+    // Start game music when entering the game screen
+    music.startGame()
+    return () => music.stopGame(true) // restore theme on exit
   }, [loadChallenge])
+
+  // Stop game music when result is showing (let SFX breathe)
+  useEffect(() => {
+    if (phase === 'result') music.stopGame()
+    if (phase === 'hunting') music.startGame()
+  }, [phase])
 
   const correctPoint = useMemo(() => {
     if ((phase === 'result' || phase === 'submitted') && challenge) {
@@ -51,7 +61,7 @@ export function GlobeSpinView() {
       {/* Floating header */}
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pointer-events-none">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => { music.stopGame(true); navigate('/') }}
           aria-label="Back to home"
           className="pointer-events-auto w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors"
         >

@@ -33,6 +33,81 @@ const CONTINENT_COLORS: Record<string, string> = {
   'Antarctica': 'rgba(148, 163, 184, 0.30)',
 }
 
+// Sub-national region labels shown on Easy at tier 3 (close zoom)
+// Helps players identify places like Redwood NP (N. California), etc.
+const REGION_LABELS = [
+  // US States
+  { lat: 37.8, lng: -122.4, text: 'California' },
+  { lat: 31.0, lng: -100.0, text: 'Texas' },
+  { lat: 44.0, lng: -120.5, text: 'Oregon' },
+  { lat: 47.5, lng: -120.5, text: 'Washington' },
+  { lat: 64.2, lng: -153.0, text: 'Alaska' },
+  { lat: 20.5, lng: -157.0, text: 'Hawaii' },
+  { lat: 43.0, lng: -75.5, text: 'New York' },
+  { lat: 42.4, lng: -71.4, text: 'Massachusetts' },
+  { lat: 38.9, lng: -77.0, text: 'Washington D.C.' },
+  { lat: 25.8, lng: -80.2, text: 'Florida' },
+  { lat: 32.8, lng: -83.6, text: 'Georgia' },
+  { lat: 41.8, lng: -87.6, text: 'Illinois' },
+  { lat: 44.9, lng: -93.1, text: 'Minnesota' },
+  { lat: 39.1, lng: -105.4, text: 'Colorado' },
+  { lat: 36.1, lng: -86.7, text: 'Tennessee' },
+  { lat: 35.5, lng: -96.9, text: 'Oklahoma' },
+  { lat: 46.9, lng: -110.4, text: 'Montana' },
+  // Canadian Provinces
+  { lat: 53.9, lng: -116.6, text: 'Alberta' },
+  { lat: 53.7, lng: -127.6, text: 'British Columbia' },
+  { lat: 53.8, lng: -98.8, text: 'Manitoba' },
+  { lat: 46.6, lng: -66.5, text: 'New Brunswick' },
+  { lat: 53.1, lng: -57.7, text: 'Newfoundland' },
+  { lat: 64.8, lng: -124.8, text: 'Northwest Territories' },
+  { lat: 44.7, lng: -63.6, text: 'Nova Scotia' },
+  { lat: 68.3, lng: -83.1, text: 'Nunavut' },
+  { lat: 44.2, lng: -78.6, text: 'Ontario' },
+  { lat: 46.5, lng: -63.4, text: 'Prince Edward Island' },
+  { lat: 52.9, lng: -73.5, text: 'Quebec' },
+  { lat: 52.9, lng: -106.5, text: 'Saskatchewan' },
+  { lat: 64.3, lng: -135.0, text: 'Yukon' },
+  // Australian States
+  { lat: -31.9, lng: 115.9, text: 'W. Australia' },
+  { lat: -25.3, lng: 133.8, text: 'N. Territory' },
+  { lat: -20.9, lng: 142.7, text: 'Queensland' },
+  { lat: -32.0, lng: 147.0, text: 'New South Wales' },
+  { lat: -37.0, lng: 144.0, text: 'Victoria' },
+  { lat: -30.0, lng: 135.0, text: 'South Australia' },
+  { lat: -42.0, lng: 147.0, text: 'Tasmania' },
+  // Major European regions
+  { lat: 40.4, lng: -3.7, text: 'Madrid' },
+  { lat: 48.9, lng: 2.3, text: 'Île-de-France' },
+  { lat: 51.5, lng: -0.1, text: 'London' },
+  { lat: 52.5, lng: 13.4, text: 'Berlin' },
+  { lat: 55.8, lng: 37.6, text: 'Moscow' },
+  { lat: 59.9, lng: 10.7, text: 'Oslo' },
+  { lat: 59.3, lng: 18.1, text: 'Stockholm' },
+  { lat: 60.2, lng: 24.9, text: 'Helsinki' },
+  // Major Chinese regions
+  { lat: 39.9, lng: 116.4, text: 'Beijing' },
+  { lat: 31.2, lng: 121.5, text: 'Shanghai' },
+  { lat: 23.1, lng: 113.3, text: 'Guangdong' },
+  { lat: 30.3, lng: 103.9, text: 'Sichuan' },
+  // Indian states
+  { lat: 28.6, lng: 77.2, text: 'Delhi' },
+  { lat: 19.1, lng: 72.9, text: 'Maharashtra' },
+  { lat: 13.1, lng: 80.3, text: 'Tamil Nadu' },
+  { lat: 22.6, lng: 88.4, text: 'West Bengal' },
+  { lat: 8.9, lng: 76.6, text: 'Kerala' },
+  // Brazil states
+  { lat: -23.5, lng: -46.6, text: 'São Paulo' },
+  { lat: -15.8, lng: -47.9, text: 'Brasília' },
+  { lat: -3.1, lng: -60.0, text: 'Amazonas' },
+  { lat: -12.9, lng: -38.5, text: 'Bahia' },
+  // African regions
+  { lat: 30.1, lng: 31.2, text: 'Cairo' },
+  { lat: -26.2, lng: 28.0, text: 'Johannesburg' },
+  { lat: 6.5, lng: 3.4, text: 'Lagos' },
+  { lat: -1.3, lng: 36.8, text: 'Nairobi' },
+]
+
 // Continent label positions for Medium difficulty
 const CONTINENT_LABELS = [
   { lat: 50, lng: 15, text: 'Europe' },
@@ -269,17 +344,18 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           arcsTransitionDuration={500}
           animateIn={true}
           waitForGlobeReady={true}
-          // Labels only render when zoomed in (performance + readability)
+          // Labels scale with zoom tier — no labels while spinning (tier 1)
           labelsData={
-            difficulty === 1 && zoomTier >= 3 ? countryLabels :
-            (difficulty === 1 || difficulty === 2) && zoomTier >= 2 ? CONTINENT_LABELS :
+            difficulty === 1 && zoomTier >= 3 ? [...countryLabels, ...REGION_LABELS] :
+            difficulty === 1 && zoomTier >= 2 ? [...CONTINENT_LABELS, ...countryLabels] :
+            difficulty === 2 && zoomTier >= 2 ? CONTINENT_LABELS :
             []
           }
           labelLat="lat"
           labelLng="lng"
           labelText="text"
-          labelSize={difficulty === 1 && zoomTier >= 3 ? 0.4 : 0.7}
-          labelColor={() => difficulty === 1 && zoomTier >= 3 ? 'rgba(226,232,240,0.75)' : 'rgba(226,232,240,0.9)'}
+          labelSize={zoomTier >= 3 ? 0.35 : 0.65}
+          labelColor={() => zoomTier >= 3 ? 'rgba(226,232,240,0.80)' : 'rgba(226,232,240,0.90)'}
           labelResolution={1}
           labelAltitude={0.01}
           // Accuracy ripple rings at correct answer location

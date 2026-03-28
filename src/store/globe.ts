@@ -22,7 +22,8 @@ interface GlobeState {
 export const useGlobeStore = create<GlobeState>((set) => ({
   viewpoint: { lat: 20, lng: 0, altitude: 2.5 },
   setViewpoint: (v) => {
-    const tier: ZoomTier = v.altitude > 2.0 ? 1 : v.altitude > 0.5 ? 2 : 3
+    // Lower thresholds so labels appear at reasonable zoom levels
+    const tier: ZoomTier = v.altitude > 1.4 ? 1 : v.altitude > 0.65 ? 2 : 3
     set({ viewpoint: v, zoomTier: tier })
   },
 

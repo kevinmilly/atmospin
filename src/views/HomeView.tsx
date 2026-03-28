@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trophy, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen, LayoutDashboard } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -10,6 +10,7 @@ import { OnboardingModal } from '@/components/ui/OnboardingModal'
 import { DifficultySelector } from '@/components/ui/DifficultySelector'
 import { XPBar } from '@/components/ui/XPBar'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
+import { music } from '@/lib/music'
 
 const ONBOARDING_KEY = 'atmospin_onboarded'
 
@@ -20,6 +21,12 @@ export function HomeView() {
   const { isAuthenticated, user, signOut } = useAuth()
   const [showAuth, setShowAuth] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY))
+
+  // Start theme on mount, clean up on unmount
+  useEffect(() => {
+    music.startTheme()
+    return () => music.stopTheme()
+  }, [])
 
   function closeOnboarding() {
     localStorage.setItem(ONBOARDING_KEY, '1')
@@ -70,7 +77,7 @@ export function HomeView() {
 
           {/* Primary Play button */}
           <button
-            onClick={() => navigate('/globe-spin')}
+            onClick={() => { music.stopTheme(); navigate('/globe-spin') }}
             className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 focus-visible:ring-2 focus-visible:ring-emerald-400 text-white font-bold text-lg py-4 px-6 rounded-2xl transition-all shadow-[0_0_24px_rgba(16,185,129,0.35)]"
           >
             <MapPin className="w-5 h-5" />
