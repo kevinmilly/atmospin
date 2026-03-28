@@ -1,6 +1,17 @@
 import { create } from 'zustand'
 import type { GlobePoint } from '@/types'
-import type { GeoChallenge } from '@/data/seed-geography'
+export interface GeoChallenge {
+  id: string
+  name: string
+  country: string
+  lat: number
+  lng: number
+  category: string
+  difficulty: number
+  prompt: string
+  hints: string[]
+  fun_fact: string
+}
 
 export type SpinPhase = 'loading' | 'prompt' | 'hunting' | 'submitted' | 'result'
 

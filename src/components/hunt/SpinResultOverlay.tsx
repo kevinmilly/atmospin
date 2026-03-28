@@ -1,6 +1,6 @@
 import { MapPin, ArrowRight, Sparkles, Target, CircleX } from 'lucide-react'
 import type { SpinScoreResult } from '@/store/globeSpin'
-import type { GeoChallenge } from '@/data/seed-geography'
+import type { GeoChallenge } from '@/store/globeSpin'
 
 interface SpinResultOverlayProps {
   scoreResult: SpinScoreResult
@@ -58,9 +58,9 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
             <p className="text-sm text-white font-medium">
-              {challenge.location.name === challenge.location.country
-                ? challenge.location.name
-                : `${challenge.location.name}, ${challenge.location.country}`}
+              {challenge.name === challenge.country
+                ? challenge.name
+                : `${challenge.name}, ${challenge.country}`}
             </p>
           </div>
           <div className="flex items-center gap-2">

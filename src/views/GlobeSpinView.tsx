@@ -24,7 +24,7 @@ export function GlobeSpinView() {
   // Show correct answer pin after result
   const correctPoint = useMemo(() => {
     if ((phase === 'result' || phase === 'submitted') && challenge) {
-      return { lat: challenge.location.lat, lng: challenge.location.lng }
+      return { lat: challenge.lat, lng: challenge.lng }
     }
     return null
   }, [phase, challenge])

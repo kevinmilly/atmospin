@@ -3,7 +3,7 @@ import { useGlobeSpinStore } from '@/store/globeSpin'
 import { useGlobeStore } from '@/store/globe'
 import { haversineDistance, calcDistanceScore, calcTotalScore } from '@/engine/huntEngine'
 import { haptics } from '@/lib/haptics'
-import { seedGeoChallenges } from '@/data/seed-geography'
+import geoPlaces from '@/data/geo-places.json'
 import type { GlobePoint } from '@/types'
 
 let lastIndex = -1
@@ -27,11 +27,11 @@ export function useGlobeSpin() {
 
     let idx: number
     do {
-      idx = Math.floor(Math.random() * seedGeoChallenges.length)
-    } while (idx === lastIndex && seedGeoChallenges.length > 1)
+      idx = Math.floor(Math.random() * geoPlaces.length)
+    } while (idx === lastIndex && geoPlaces.length > 1)
     lastIndex = idx
 
-    setChallenge(seedGeoChallenges[idx])
+    setChallenge(geoPlaces[idx])
     setPhase('prompt')
   }, [reset, setGlobePin, setChallenge, setPhase])
 
@@ -53,8 +53,8 @@ export function useGlobeSpin() {
     setPhase('submitted')
 
     const target: GlobePoint = {
-      lat: challenge.location.lat,
-      lng: challenge.location.lng,
+      lat: challenge.lat,
+      lng: challenge.lng,
     }
 
     const distanceKm = Math.round(haversineDistance(playerPin, target))
