@@ -1,17 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Star, ChevronDown, Grip } from 'lucide-react'
+import { ArrowLeft, Globe, Star, ChevronDown, Grip, Flame } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
 import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { SpinResultOverlay } from '@/components/hunt/SpinResultOverlay'
 import { useGlobeSpin } from '@/hooks/useGlobeSpin'
 import { useSettingsStore } from '@/store/settings'
+import { useAchievementsStore } from '@/store/achievements'
+import { getStreakLabel, getStreakMultiplier } from '@/store/xp'
 
 export function GlobeSpinView() {
   const navigate = useNavigate()
   const [panelOpen, setPanelOpen] = useState(false)
   const difficulty = useSettingsStore(s => s.difficulty)
+  const currentStreak = useAchievementsStore(s => s.stats.currentStreak)
+  const multiplier = getStreakMultiplier(currentStreak)
+  const streakLabel = getStreakLabel(currentStreak)
 
   const {
     phase, challenge, playerPin, hintsRevealed,
@@ -32,9 +38,17 @@ export function GlobeSpinView() {
     return null
   }, [phase, challenge])
 
+  // Camera flies to correct answer when result is revealed
+  const focusPoint = useMemo(() => {
+    if (phase === 'result' && challenge) {
+      return { lat: challenge.lat, lng: challenge.lng }
+    }
+    return null
+  }, [phase, challenge])
+
   return (
     <div className="h-full flex flex-col relative overflow-hidden touch-manipulation">
-      {/* Floating header — sits above globe without taking flow space */}
+      {/* Floating header */}
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pointer-events-none">
         <button
           onClick={() => navigate('/')}
@@ -43,14 +57,39 @@ export function GlobeSpinView() {
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        {roundsPlayed > 0 && (
-          <div className="pointer-events-none bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300">
-            Round {roundsPlayed + 1} &middot; {sessionScore} pts
-          </div>
-        )}
+
+        <div className="flex items-center gap-2 pointer-events-none">
+          {/* Streak multiplier badge */}
+          <AnimatePresence>
+            {currentStreak >= 3 && (
+              <motion.div
+                key={streakLabel}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.6, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-bold backdrop-blur-sm ${
+                  multiplier >= 2.0 ? 'bg-violet-900/80 border-violet-500 text-violet-200' :
+                  multiplier >= 1.5 ? 'bg-red-900/80 border-red-500 text-red-200' :
+                  multiplier >= 1.25 ? 'bg-amber-900/80 border-amber-500 text-amber-200' :
+                  'bg-orange-900/80 border-orange-600 text-orange-200'
+                }`}
+              >
+                <Flame className="w-3 h-3" />
+                {currentStreak} · {streakLabel}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {roundsPlayed > 0 && (
+            <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300">
+              Round {roundsPlayed + 1} · {sessionScore} pts
+            </div>
+          )}
+        </div>
       </header>
 
-      {/* Globe — takes all remaining space above the bottom panel */}
+      {/* Globe */}
       <div className="flex-1 min-h-0">
         <GlobeCanvas
           onGlobeClick={placePin}
@@ -58,13 +97,19 @@ export function GlobeSpinView() {
           correctPoint={correctPoint}
           interactive={phase === 'hunting'}
           difficulty={difficulty}
+          focusPoint={focusPoint}
         />
       </div>
 
       {/* Prompt overlay */}
       {phase === 'prompt' && challenge && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-5">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+            className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-5"
+          >
             <div className="flex items-center gap-2">
               <Globe className="w-5 h-5 text-emerald-400" />
               <span className="text-sm font-medium text-emerald-400">Globe Spin</span>
@@ -72,10 +117,7 @@ export function GlobeSpinView() {
             <p className="text-lg text-white leading-relaxed">{challenge.prompt}</p>
             <div className="flex items-center gap-1.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-4 h-4 ${i < challenge.difficulty ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`}
-                />
+                <Star key={i} className={`w-4 h-4 ${i < challenge.difficulty ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`} />
               ))}
               <span className="text-xs text-slate-400 ml-2">Difficulty {challenge.difficulty}/5</span>
             </div>
@@ -85,14 +127,13 @@ export function GlobeSpinView() {
             >
               Spin the Globe
             </button>
-          </div>
+          </motion.div>
         </div>
       )}
 
-      {/* Hunting bottom panel — in flow, never covers globe */}
+      {/* Hunting bottom panel */}
       {phase === 'hunting' && challenge && (
         <div className="shrink-0">
-          {/* Expandable hint section */}
           <div
             className={`overflow-hidden transition-[max-height] duration-300 ease-in-out bg-slate-900/95 backdrop-blur-sm border-t border-slate-700/40 ${
               panelOpen ? 'max-h-[42vh]' : 'max-h-0'
@@ -104,7 +145,6 @@ export function GlobeSpinView() {
             </div>
           </div>
 
-          {/* Collapsed bar — always visible, minimal */}
           <div className={`bg-slate-900/80 backdrop-blur-sm border-t transition-colors duration-300 ${
             panelOpen ? 'border-slate-700/40' : 'border-slate-800/30'
           } px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center gap-2`}>
@@ -114,10 +154,7 @@ export function GlobeSpinView() {
               className="flex items-center gap-1.5 text-xs transition-colors shrink-0 py-1.5 px-2 rounded-lg hover:bg-slate-800"
               style={{ color: panelOpen ? '#94a3b8' : '#475569' }}
             >
-              {panelOpen
-                ? <ChevronDown className="w-3.5 h-3.5" />
-                : <Grip className="w-3.5 h-3.5" />
-              }
+              {panelOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <Grip className="w-3.5 h-3.5" />}
               <span>Hints</span>
             </button>
             <div className="flex-1">

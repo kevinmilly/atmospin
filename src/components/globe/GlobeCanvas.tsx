@@ -78,9 +78,13 @@ interface GlobeCanvasProps {
   correctPoint?: GlobePoint | null
   interactive?: boolean
   difficulty?: DifficultyTier
+  /** When set, smoothly flies the camera to this point */
+  focusPoint?: GlobePoint | null
+  /** Slowly auto-rotates the globe (for home screen) */
+  autoRotate?: boolean
 }
 
-export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive = true, difficulty = 4 }: GlobeCanvasProps) {
+export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive = true, difficulty = 4, focusPoint, autoRotate = false }: GlobeCanvasProps) {
   const globeRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
   const containerRef = useRef<HTMLDivElement>(null)
   const [countries, setCountries] = useState<CountryFeature[]>([])
@@ -128,6 +132,28 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
     controls.addEventListener('change', handleChange)
     return () => controls.removeEventListener('change', handleChange)
   }, [setViewpoint])
+
+  // Fly camera to focusPoint when it changes
+  useEffect(() => {
+    if (!focusPoint || !globeRef.current) return
+    globeRef.current.pointOfView({ lat: focusPoint.lat, lng: focusPoint.lng, altitude: 1.8 }, 1300)
+  }, [focusPoint])
+
+  // Auto-rotate for home screen
+  useEffect(() => {
+    if (!autoRotate) return
+    let frame: number
+    const tick = () => {
+      const globe = globeRef.current
+      if (globe) {
+        const pov = globe.pointOfView()
+        globe.pointOfView({ ...pov, lng: ((pov.lng ?? 0) + 0.15) % 360 })
+      }
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [autoRotate])
 
   // Handle globe click
   const handleGlobeClick = useCallback(({ lat, lng }: { lat: number; lng: number }) => {
@@ -243,15 +269,27 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           arcsTransitionDuration={500}
           animateIn={true}
           waitForGlobeReady={true}
-          // Difficulty-based labels
-          labelsData={difficulty === 1 ? countryLabels : difficulty === 2 ? CONTINENT_LABELS : []}
+          // Labels only render when zoomed in (performance + readability)
+          labelsData={
+            difficulty === 1 && zoomTier >= 3 ? countryLabels :
+            (difficulty === 1 || difficulty === 2) && zoomTier >= 2 ? CONTINENT_LABELS :
+            []
+          }
           labelLat="lat"
           labelLng="lng"
           labelText="text"
-          labelSize={difficulty === 1 ? 0.4 : 0.7}
-          labelColor={() => difficulty === 1 ? 'rgba(226,232,240,0.75)' : 'rgba(226,232,240,0.9)'}
-          labelResolution={2}
-          labelAltitude={0.02}
+          labelSize={difficulty === 1 && zoomTier >= 3 ? 0.4 : 0.7}
+          labelColor={() => difficulty === 1 && zoomTier >= 3 ? 'rgba(226,232,240,0.75)' : 'rgba(226,232,240,0.9)'}
+          labelResolution={1}
+          labelAltitude={0.01}
+          // Accuracy ripple rings at correct answer location
+          ringsData={correctPoint ? [correctPoint] : []}
+          ringLat="lat"
+          ringLng="lng"
+          ringColor={() => 'rgba(34,197,94,0.7)'}
+          ringMaxRadius={3.5}
+          ringPropagationSpeed={2.5}
+          ringRepeatPeriod={900}
         />
       )}
 

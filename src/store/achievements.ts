@@ -50,8 +50,8 @@ export interface AchievementStats {
 export const ALL_ACHIEVEMENTS: Achievement[] = [
   // Accuracy
   { id: 'first_pin', name: 'First Pin', description: 'Place your very first pin on the globe.', icon: '📍', category: 'accuracy' },
-  { id: 'sharpshooter', name: 'Sharpshooter', description: 'Score 900+ points in Globe Spin.', icon: '🎯', category: 'accuracy' },
-  { id: 'sniper', name: 'Sniper', description: 'Score 1400+ points in Hunt mode.', icon: '🔭', category: 'accuracy' },
+  { id: 'sharpshooter', name: 'Sharpshooter', description: 'Score 900+ points in a single round.', icon: '🎯', category: 'accuracy' },
+  { id: 'perfectionist_score', name: 'Perfection', description: 'Score 950+ points in a single round.', icon: '💫', category: 'accuracy' },
   { id: 'bullseye', name: 'Bullseye', description: 'Land within 50 km of the target.', icon: '🎪', category: 'accuracy' },
   { id: 'point_blank', name: 'Point Blank', description: 'Land within 10 km of the target.', icon: '⚡', category: 'accuracy' },
   { id: 'dead_center', name: 'Dead Center', description: 'Land within 1 km of the target.', icon: '💎', category: 'accuracy' },
@@ -66,10 +66,9 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   { id: 'globe_trotter', name: 'Globe Trotter', description: 'Place pins in all 7 continents.', icon: '🌐', category: 'exploration', progressTarget: 7 },
   { id: 'both_hemispheres', name: 'Both Sides Now', description: 'Place a pin in both the Northern and Southern hemispheres.', icon: '🌓', category: 'exploration' },
   // Knowledge
-  { id: 'history_buff', name: 'History Buff', description: 'Complete 10 Hunt rounds.', icon: '📜', category: 'knowledge', progressTarget: 10 },
-  { id: 'historian', name: 'Historian', description: 'Complete 50 Hunt rounds.', icon: '🏛️', category: 'knowledge', progressTarget: 50 },
   { id: 'spin_doctor', name: 'Spin Doctor', description: 'Complete 10 Globe Spin rounds.', icon: '🌀', category: 'knowledge', progressTarget: 10 },
   { id: 'geography_master', name: 'Geography Master', description: 'Complete 50 Globe Spin rounds.', icon: '🗺️', category: 'knowledge', progressTarget: 50 },
+  { id: 'centurion', name: 'Centurion', description: 'Complete 100 Globe Spin rounds.', icon: '💯', category: 'knowledge', progressTarget: 100 },
   // Milestone
   { id: 'first_steps', name: 'First Steps', description: 'Earn 1,000 total points across all games.', icon: '👣', category: 'milestone', progressTarget: 1000 },
   { id: 'getting_serious', name: 'Getting Serious', description: 'Earn 10,000 total points.', icon: '📈', category: 'milestone', progressTarget: 10000 },
@@ -96,8 +95,8 @@ function checkConditions(stats: AchievementStats, round: RoundRecord, alreadyUnl
 
   // Accuracy
   if (stats.totalRounds >= 1) tryUnlock('first_pin')
-  if (round.mode === 'spin' && round.score >= 900) tryUnlock('sharpshooter')
-  if (round.mode === 'hunt' && round.score >= 1400) tryUnlock('sniper')
+  if (round.score >= 900) tryUnlock('sharpshooter')
+  if (round.score >= 950) tryUnlock('perfectionist_score')
   if (round.distanceKm <= 50) tryUnlock('bullseye')
   if (round.distanceKm <= 10) tryUnlock('point_blank')
   if (round.distanceKm <= 1) tryUnlock('dead_center')
@@ -115,10 +114,9 @@ function checkConditions(stats: AchievementStats, round: RoundRecord, alreadyUnl
   if (stats.hemispheresVisited.includes('north') && stats.hemispheresVisited.includes('south')) tryUnlock('both_hemispheres')
 
   // Knowledge
-  if (stats.huntRounds >= 10) tryUnlock('history_buff')
-  if (stats.huntRounds >= 50) tryUnlock('historian')
   if (stats.spinRounds >= 10) tryUnlock('spin_doctor')
   if (stats.spinRounds >= 50) tryUnlock('geography_master')
+  if (stats.spinRounds >= 100) tryUnlock('centurion')
 
   // Milestone
   if (stats.totalScore >= 1000) tryUnlock('first_steps')

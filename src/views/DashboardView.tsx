@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trophy, Target, Zap, Globe, Clock, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Trophy, Target, Zap, Globe, Clock, TrendingUp, Star } from 'lucide-react'
 import { useAchievementsStore, ALL_ACHIEVEMENTS } from '@/store/achievements'
 import type { Achievement } from '@/store/achievements'
+import { useXpStore, getLevelInfo } from '@/store/xp'
+import { motion } from 'framer-motion'
 
 const CATEGORY_LABELS: Record<Achievement['category'], string> = {
   accuracy: 'Accuracy',
@@ -69,6 +71,8 @@ export function DashboardView() {
   const navigate = useNavigate()
   const { stats, unlockedIds, unlockedDates } = useAchievementsStore()
   const unlockedSet = new Set(unlockedIds)
+  const totalXp = useXpStore(s => s.totalXp)
+  const { current, next, xpIntoLevel, xpForLevel, progress } = getLevelInfo(totalXp)
 
   const avg = stats.totalRounds > 0 ? Math.round(stats.totalScore / stats.totalRounds) : 0
   const unlockedCount = unlockedIds.length
@@ -89,12 +93,40 @@ export function DashboardView() {
       </header>
 
       <div className="p-4 space-y-6 pb-12">
+        {/* Level card */}
+        <section className="bg-gradient-to-r from-indigo-900/40 to-violet-900/40 border border-indigo-700/40 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-indigo-300 font-semibold uppercase tracking-widest">Level {current.level}</p>
+              <p className="text-2xl font-bold text-white">{current.title}</p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+              <Star className="w-6 h-6 text-indigo-300" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-slate-400">
+              <span>{xpIntoLevel.toLocaleString()} XP</span>
+              <span>{next ? `${xpForLevel.toLocaleString()} to ${next.title}` : 'Max Level'}</span>
+            </div>
+            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-400"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress * 100}%` }}
+                transition={{ duration: 1.0, ease: 'easeOut', delay: 0.2 }}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-slate-500">{totalXp.toLocaleString()} total XP earned</p>
+        </section>
+
         {/* Stats grid */}
         <section>
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Stats</h2>
           <div className="grid grid-cols-2 gap-2">
             <StatCard label="Total Points" value={stats.totalScore.toLocaleString()} icon={TrendingUp} />
-            <StatCard label="Games Played" value={stats.totalRounds} icon={Globe} sub={`${stats.huntRounds} hunt · ${stats.spinRounds} spin`} />
+            <StatCard label="Rounds Played" value={stats.totalRounds} icon={Globe} sub="Globe Spin" />
             <StatCard label="Best Score" value={stats.bestScore.toLocaleString()} icon={Target} sub="single round" />
             <StatCard label="Avg Score" value={avg.toLocaleString()} icon={Zap} sub="per round" />
             <StatCard label="Best Streak" value={stats.maxStreak} icon={Trophy} sub="rounds ≥700 pts" />

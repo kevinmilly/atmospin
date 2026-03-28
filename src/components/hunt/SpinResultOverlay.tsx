@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
-import { MapPin, ArrowRight, Sparkles, Target, CircleX } from 'lucide-react'
-import type { SpinScoreResult } from '@/store/globeSpin'
-import type { GeoChallenge } from '@/store/globeSpin'
+import { useEffect, useRef, useState } from 'react'
+import { MapPin, ArrowRight, Sparkles, Target, CircleX, Zap } from 'lucide-react'
+import { motion } from 'framer-motion'
+import type { SpinScoreResult, GeoChallenge } from '@/store/globeSpin'
 import type { GlobePoint } from '@/types'
 import { audio } from '@/lib/audio'
 import { reverseGeocode } from '@/lib/geo'
 import { useAchievementsStore } from '@/store/achievements'
+import { useXpStore, calcXpGain, getLevelInfo } from '@/store/xp'
 import { useSettingsStore, DIFFICULTY_CONFIG } from '@/store/settings'
+import { estimateContinent } from '@/lib/geo'
+import { Confetti } from '@/components/ui/Confetti'
 
 interface SpinResultOverlayProps {
   scoreResult: SpinScoreResult
@@ -17,7 +20,7 @@ interface SpinResultOverlayProps {
   onNextRound: () => void
 }
 
-function getRating(score: number): { label: string; color: string; bg: string; icon: typeof Sparkles } {
+function getRating(score: number) {
   if (score >= 900) return { label: 'Bullseye!', color: 'text-emerald-400', bg: 'from-emerald-950/80 to-slate-900/95', icon: Target }
   if (score >= 700) return { label: 'Great Shot!', color: 'text-blue-400', bg: 'from-blue-950/80 to-slate-900/95', icon: Sparkles }
   if (score >= 500) return { label: 'Not Bad!', color: 'text-cyan-400', bg: 'from-cyan-950/60 to-slate-900/95', icon: MapPin }
@@ -26,19 +29,55 @@ function getRating(score: number): { label: string; color: string; bg: string; i
   return { label: 'On Another Continent!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
 }
 
+/** Animate a number from 0 to target over ~900ms */
+function useCountUp(target: number, delay = 200): number {
+  const [value, setValue] = useState(0)
+  const frameRef = useRef<number>(0)
+
+  useEffect(() => {
+    const start = performance.now() + delay
+    const duration = 900
+
+    const tick = (now: number) => {
+      if (now < start) { frameRef.current = requestAnimationFrame(tick); return }
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(Math.round(eased * target))
+      if (progress < 1) frameRef.current = requestAnimationFrame(tick)
+    }
+
+    frameRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frameRef.current)
+  }, [target, delay])
+
+  return value
+}
+
 export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessionScore, playerPin, onNextRound }: SpinResultOverlayProps) {
   const rating = getRating(scoreResult.totalScore)
   const Icon = rating.icon
+  const displayScore = useCountUp(scoreResult.totalScore)
   const [pinLocationName, setPinLocationName] = useState<string | null>(null)
+  const [xpGained, setXpGained] = useState(0)
+  const [isPersonalBest, setIsPersonalBest] = useState(false)
+  const [leveledUp, setLeveledUp] = useState<string | null>(null)
+
   const recordRound = useAchievementsStore(s => s.recordRound)
+  const stats = useAchievementsStore(s => s.stats)
+  const { addXp, recordPersonalBest } = useXpStore()
+  const totalXp = useXpStore(s => s.totalXp)
   const difficulty = useSettingsStore(s => s.difficulty)
   const multiplier = DIFFICULTY_CONFIG[difficulty].multiplier
 
-  // Play sound and record achievements once on mount
+  const showConfetti = scoreResult.totalScore >= 850
+
   useEffect(() => {
     if (scoreResult.totalScore >= 500) audio.success()
     else if (scoreResult.totalScore < 150) audio.desync()
 
+    const prevContinent = stats.continentsVisited
     recordRound({
       mode: 'spin',
       score: scoreResult.totalScore,
@@ -49,18 +88,58 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
       challengeName: challenge.name,
       playerPin: playerPin ?? null,
     })
+
+    const isPB = recordPersonalBest(challenge.id, scoreResult.distanceKm)
+    setIsPersonalBest(isPB)
+
+    const newContinent = playerPin ? estimateContinent(playerPin.lat, playerPin.lng) : null
+    const isNewContinent = newContinent ? !prevContinent.includes(newContinent) : false
+
+    const xp = calcXpGain(
+      scoreResult.totalScore,
+      scoreResult.hintsUsed,
+      isNewContinent,
+      isPB,
+      stats.currentStreak >= 3,
+    )
+
+    const { leveled } = addXp(xp)
+    setXpGained(xp)
+
+    if (leveled) {
+      const { current } = getLevelInfo(totalXp + xp)
+      setLeveledUp(current.title)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Reverse-geocode player's pin
   useEffect(() => {
     if (!playerPin) return
     reverseGeocode(playerPin.lat, playerPin.lng).then(setPinLocationName)
   }, [playerPin])
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20">
-      <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-w-lg mx-auto space-y-4 animate-slide-up`}>
+    <motion.div
+      className="absolute bottom-0 left-0 right-0 z-20"
+      initial={{ y: '100%', opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+    >
+      {showConfetti && <Confetti />}
+
+      <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-w-lg mx-auto space-y-4`}>
+        {/* Level up banner */}
+        {leveledUp && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-indigo-600/40 to-violet-600/40 border border-indigo-500/50 rounded-xl px-3 py-2 flex items-center justify-center gap-2"
+          >
+            <span className="text-base">🎉</span>
+            <p className="text-sm font-bold text-indigo-200">Level Up! You're now a <span className="text-white">{leveledUp}</span></p>
+          </motion.div>
+        )}
+
         {/* Rating + Score */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -72,24 +151,35 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
             <div>
               <p className={`text-lg font-bold ${rating.color}`}>{rating.label}</p>
               <p className="text-xs text-slate-400">{scoreResult.distanceKm.toLocaleString()} km off</p>
+              {isPersonalBest && (
+                <p className="text-[10px] text-amber-400 font-medium">🏆 New personal best!</p>
+              )}
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-white tabular-nums">{scoreResult.totalScore}</p>
+            <motion.p
+              className="text-3xl font-bold text-white tabular-nums"
+              animate={displayScore === scoreResult.totalScore ? { scale: [1, 1.12, 1] } : {}}
+              transition={{ duration: 0.3 }}
+            >
+              {displayScore.toLocaleString()}
+            </motion.p>
             <p className="text-xs text-slate-400">points</p>
             {multiplier < 1 && (
-              <p className="text-[10px] text-indigo-400">{DIFFICULTY_CONFIG[difficulty].label} multiplier</p>
+              <p className="text-[10px] text-indigo-400">{DIFFICULTY_CONFIG[difficulty].label} difficulty</p>
             )}
           </div>
         </div>
 
         {/* Score bar */}
         <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-1000 ${
+          <motion.div
+            className={`h-full rounded-full ${
               scoreResult.totalScore >= 700 ? 'bg-emerald-500' : scoreResult.totalScore >= 300 ? 'bg-amber-500' : 'bg-red-500'
             }`}
-            style={{ width: `${Math.min(100, (scoreResult.totalScore / 1000) * 100)}%` }}
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(100, (scoreResult.totalScore / 1000) * 100)}%` }}
+            transition={{ duration: 1.0, ease: 'easeOut', delay: 0.4 }}
           />
         </div>
 
@@ -108,9 +198,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
             </p>
           </div>
           {challenge.fun_fact && (
-            <p className="text-xs text-indigo-300 italic pt-1 border-t border-slate-700/50">
-              {challenge.fun_fact}
-            </p>
+            <p className="text-xs text-indigo-300 italic pt-1 border-t border-slate-700/50">{challenge.fun_fact}</p>
           )}
         </div>
 
@@ -120,20 +208,33 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           </p>
         )}
 
-        {/* Session stats + Next */}
+        {/* XP gained */}
+        {xpGained > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="flex items-center justify-center gap-1.5 text-xs text-indigo-300"
+          >
+            <Zap className="w-3 h-3" />
+            +{xpGained} XP
+          </motion.div>
+        )}
+
+        {/* Session + Next */}
         <div className="flex items-center gap-3">
           <div className="text-xs text-slate-400 tabular-nums whitespace-nowrap">
-            Round {roundsPlayed} &middot; {sessionScore} pts
+            Round {roundsPlayed} · {sessionScore} pts
           </div>
           <button
             onClick={onNextRound}
-            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-white font-semibold py-3 rounded-xl transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 text-white font-semibold py-3 rounded-xl transition-colors"
           >
             Next Round
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

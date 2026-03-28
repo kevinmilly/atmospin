@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls /c/Users/jamik/Downloads/*.wav /c/Users/jamik/Downloads/*.mp3)",
+      "Bash(cp \"/c/Users/jamik/Downloads/success.wav\" \"/c/Users/jamik/kevinProjects/the-weave/public/sounds/success.wav\")",
+      "Bash(cp \"/c/Users/jamik/Downloads/desync-warn.wav\" \"/c/Users/jamik/kevinProjects/the-weave/public/sounds/desync-warn.wav\")",
+      "Bash(mkdir -p \"/c/Users/jamik/kevinProjects/the-weave/public/sounds\")",
+      "Bash(npm run:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}
