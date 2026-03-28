@@ -3,10 +3,12 @@ import GlobeGL from 'react-globe.gl'
 import { useGlobeStore } from '@/store/globe'
 import { haptics } from '@/lib/haptics'
 import type { GlobePoint } from '@/types'
+import type { DifficultyTier } from '@/store/settings'
+import { estimateContinent } from '@/lib/geo'
 
 interface CountryFeature {
   properties: { ADMIN: string; ISO_A2: string; MAPCOLOR7: number }
-  geometry: object
+  geometry: { type: string; coordinates: number[][][] | number[][][][] }
 }
 
 // Color palette for countries — muted dark tones so they don't overpower
@@ -20,14 +22,65 @@ const COUNTRY_COLORS = [
   'rgba(20, 184, 166, 0.30)',   // teal
 ]
 
+// Continent colors for Hard difficulty (more distinct, grouped by continent)
+const CONTINENT_COLORS: Record<string, string> = {
+  'Europe': 'rgba(99, 102, 241, 0.50)',
+  'Asia': 'rgba(20, 184, 166, 0.45)',
+  'Africa': 'rgba(245, 158, 11, 0.45)',
+  'North America': 'rgba(59, 130, 246, 0.45)',
+  'South America': 'rgba(16, 185, 129, 0.45)',
+  'Oceania': 'rgba(236, 72, 153, 0.40)',
+  'Antarctica': 'rgba(148, 163, 184, 0.30)',
+}
+
+// Continent label positions for Medium difficulty
+const CONTINENT_LABELS = [
+  { lat: 50, lng: 15, text: 'Europe' },
+  { lat: 35, lng: 90, text: 'Asia' },
+  { lat: 3, lng: 20, text: 'Africa' },
+  { lat: 48, lng: -100, text: 'N. America' },
+  { lat: -15, lng: -58, text: 'S. America' },
+  { lat: -25, lng: 135, text: 'Australia' },
+  { lat: -75, lng: 0, text: 'Antarctica' },
+  // Major islands / landmasses
+  { lat: 72, lng: -42, text: 'Greenland' },
+  { lat: -20, lng: 46, text: 'Madagascar' },
+  { lat: 64, lng: -19, text: 'Iceland' },
+  { lat: 0, lng: 114, text: 'Borneo' },
+  { lat: -6, lng: 137, text: 'New Guinea' },
+  { lat: -42, lng: 172, text: 'New Zealand' },
+]
+
+/** Compute a rough centroid (bounding-box center) for a GeoJSON polygon feature */
+function getCentroid(feature: CountryFeature): { lat: number; lng: number } | null {
+  try {
+    const coords: number[][] = []
+    const geom = feature.geometry
+    const rings = geom.type === 'Polygon'
+      ? [geom.coordinates[0] as number[][]]
+      : (geom.coordinates as number[][][][]).map(p => p[0])
+    for (const ring of rings) for (const c of ring) coords.push(c)
+    if (!coords.length) return null
+    const lngs = coords.map(c => c[0])
+    const lats = coords.map(c => c[1])
+    return {
+      lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+      lng: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+    }
+  } catch {
+    return null
+  }
+}
+
 interface GlobeCanvasProps {
   onGlobeClick?: (point: GlobePoint) => void
   pinPoint?: GlobePoint | null
   correctPoint?: GlobePoint | null
   interactive?: boolean
+  difficulty?: DifficultyTier
 }
 
-export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive = true }: GlobeCanvasProps) {
+export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive = true, difficulty = 4 }: GlobeCanvasProps) {
   const globeRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
   const containerRef = useRef<HTMLDivElement>(null)
   const [countries, setCountries] = useState<CountryFeature[]>([])
@@ -106,14 +159,32 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
     }]
   }, [pinPoint, correctPoint])
 
+  // Country labels for Easy difficulty
+  const countryLabels = useMemo(() => {
+    if (difficulty !== 1 || !countries.length) return []
+    return countries
+      .map(feat => {
+        const centroid = getCentroid(feat)
+        if (!centroid) return null
+        return { lat: centroid.lat, lng: centroid.lng, text: feat.properties.ADMIN }
+      })
+      .filter((l): l is { lat: number; lng: number; text: string } => l !== null)
+  }, [difficulty, countries])
+
   // Polygon colors
   const getPolygonCapColor = useCallback((d: object) => {
     const feat = d as CountryFeature
     if (feat.properties.ADMIN === hoveredCountry) {
       return 'rgba(129, 140, 248, 0.6)' // highlight on hover
     }
+    if (difficulty === 3) {
+      // Hard: continent-based colors
+      const centroid = getCentroid(feat)
+      const continent = centroid ? estimateContinent(centroid.lat, centroid.lng) : 'Asia'
+      return CONTINENT_COLORS[continent] ?? COUNTRY_COLORS[feat.properties.MAPCOLOR7 % COUNTRY_COLORS.length]
+    }
     return COUNTRY_COLORS[feat.properties.MAPCOLOR7 % COUNTRY_COLORS.length]
-  }, [hoveredCountry])
+  }, [hoveredCountry, difficulty])
 
   const getPolygonSideColor = useCallback(() => 'rgba(30, 41, 59, 0.8)', [])
   const getPolygonStrokeColor = useCallback(() => {
@@ -172,6 +243,15 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           arcsTransitionDuration={500}
           animateIn={true}
           waitForGlobeReady={true}
+          // Difficulty-based labels
+          labelsData={difficulty === 1 ? countryLabels : difficulty === 2 ? CONTINENT_LABELS : []}
+          labelLat="lat"
+          labelLng="lng"
+          labelText="text"
+          labelSize={difficulty === 1 ? 0.4 : 0.7}
+          labelColor={() => difficulty === 1 ? 'rgba(226,232,240,0.75)' : 'rgba(226,232,240,0.9)'}
+          labelResolution={2}
+          labelAltitude={0.02}
         />
       )}
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronUp, ChevronDown } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Grip } from 'lucide-react'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import type { HuntChallenge, HistoricalEvent, Location, GlobePoint } from '@/types'
 import type { HuntPhase } from '@/store/hunt'
@@ -10,9 +10,11 @@ import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { ChronoDial } from '@/components/chrono/ChronoDial'
 import { ResultOverlay } from '@/components/hunt/ResultOverlay'
 import { useHunt } from '@/hooks/useHunt'
+import { useSettingsStore } from '@/store/settings'
 
 export function HuntView() {
   const navigate = useNavigate()
+  const difficulty = useSettingsStore(s => s.difficulty)
 
   const {
     phase,
@@ -42,26 +44,26 @@ export function HuntView() {
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden touch-manipulation">
-      <header className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 p-4">
+      <header className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 p-4 pointer-events-none">
         <button
           onClick={() => navigate('/')}
           aria-label="Back to home"
-          className="w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors"
+          className="pointer-events-auto w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
       </header>
 
-      <div className="flex-1">
+      {/* Globe — takes all remaining vertical space */}
+      <div className="flex-1 min-h-0">
         <GlobeCanvas
           onGlobeClick={placePin}
           pinPoint={playerPin}
           correctPoint={correctPoint}
           interactive={phase === 'hunting'}
+          difficulty={difficulty}
         />
       </div>
-
-      {/* Globe controls removed — pinch-to-zoom handles zoom natively */}
 
       {phase === 'prompt' && challenge && (
         <PromptCard challenge={challenge} onStart={startHunting} />
@@ -90,7 +92,12 @@ export function HuntView() {
       )}
 
       {phase === 'result' && scoreResult && challenge && (
-        <ResultOverlay scoreResult={scoreResult} challenge={challenge} onNextHunt={loadChallenge} />
+        <ResultOverlay
+          scoreResult={scoreResult}
+          challenge={challenge}
+          playerPin={playerPin}
+          onNextHunt={loadChallenge}
+        />
       )}
     </div>
   )
@@ -112,23 +119,43 @@ function HuntPanel({
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        aria-label={expanded ? 'Collapse hints' : 'Expand hints'}
-        className="w-full flex items-center justify-center pt-2 pb-1 text-slate-500 focus-visible:ring-2 focus-visible:ring-indigo-400"
+    <div className="shrink-0">
+      {/* Expandable section */}
+      <div
+        className={`overflow-hidden transition-[max-height] duration-300 ease-in-out bg-slate-900/95 backdrop-blur-sm border-t border-slate-700/40 ${
+          expanded ? 'max-h-[50vh]' : 'max-h-0'
+        }`}
       >
-        {expanded ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-      </button>
+        <div className="px-4 pt-3 pb-2 overflow-y-auto max-h-[50vh] space-y-3">
+          <p className="text-sm text-slate-300 leading-relaxed line-clamp-3">
+            {challenge.prompt_text}
+          </p>
+          <HintDrawer
+            hints={challenge.hints}
+            hintsRevealed={hintsRevealed}
+            onRevealHint={useHint}
+          />
+        </div>
+      </div>
 
-      <div className="px-4 pb-4 space-y-3">
-        <p className="text-sm text-slate-300 leading-relaxed line-clamp-2">
-          {challenge.prompt_text}
-        </p>
-
-        {/* Chrono-Dial */}
-        <div className="flex justify-center">
-          <ChronoDial year={playerYear} onChange={setPlayerYear} />
+      {/* Persistent bar */}
+      <div className={`bg-slate-900/80 backdrop-blur-sm border-t transition-colors duration-300 ${
+        expanded ? 'border-slate-700/40' : 'border-slate-800/30'
+      } px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] space-y-2`}>
+        {/* Toggle + year dial row */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setExpanded(e => !e)}
+            aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
+            className="flex items-center gap-1.5 text-xs transition-colors shrink-0 py-1.5 px-2 rounded-lg hover:bg-slate-800"
+            style={{ color: expanded ? '#94a3b8' : '#475569' }}
+          >
+            {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <Grip className="w-3.5 h-3.5" />}
+            <span>Hints</span>
+          </button>
+          <div className="flex-1 flex justify-center">
+            <ChronoDial year={playerYear} onChange={setPlayerYear} />
+          </div>
         </div>
 
         <SubmitButton
@@ -136,14 +163,6 @@ function HuntPanel({
           onSubmit={submitAnswer}
           disabled={phase !== 'hunting'}
         />
-
-        {expanded && (
-          <HintDrawer
-            hints={challenge.hints}
-            hintsRevealed={hintsRevealed}
-            onRevealHint={useHint}
-          />
-        )}
       </div>
     </div>
   )

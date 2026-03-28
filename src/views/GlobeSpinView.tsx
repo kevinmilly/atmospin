@@ -1,14 +1,17 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Star } from 'lucide-react'
+import { ArrowLeft, Globe, Star, ChevronDown, Grip } from 'lucide-react'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
 import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { SpinResultOverlay } from '@/components/hunt/SpinResultOverlay'
 import { useGlobeSpin } from '@/hooks/useGlobeSpin'
+import { useSettingsStore } from '@/store/settings'
 
 export function GlobeSpinView() {
   const navigate = useNavigate()
+  const [panelOpen, setPanelOpen] = useState(false)
+  const difficulty = useSettingsStore(s => s.difficulty)
 
   const {
     phase, challenge, playerPin, hintsRevealed,
@@ -19,9 +22,9 @@ export function GlobeSpinView() {
 
   useEffect(() => {
     loadChallenge()
+    setPanelOpen(false)
   }, [loadChallenge])
 
-  // Show correct answer pin after result
   const correctPoint = useMemo(() => {
     if ((phase === 'result' || phase === 'submitted') && challenge) {
       return { lat: challenge.lat, lng: challenge.lng }
@@ -31,32 +34,34 @@ export function GlobeSpinView() {
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden touch-manipulation">
-      <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4">
+      {/* Floating header — sits above globe without taking flow space */}
+      <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pointer-events-none">
         <button
           onClick={() => navigate('/')}
           aria-label="Back to home"
-          className="w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors"
+          className="pointer-events-auto w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         {roundsPlayed > 0 && (
-          <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300">
+          <div className="pointer-events-none bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300">
             Round {roundsPlayed + 1} &middot; {sessionScore} pts
           </div>
         )}
       </header>
 
-      <div className="flex-1">
+      {/* Globe — takes all remaining space above the bottom panel */}
+      <div className="flex-1 min-h-0">
         <GlobeCanvas
           onGlobeClick={placePin}
           pinPoint={playerPin}
           correctPoint={correctPoint}
           interactive={phase === 'hunting'}
+          difficulty={difficulty}
         />
       </div>
 
-      {/* Globe controls removed — pinch-to-zoom handles zoom natively */}
-
+      {/* Prompt overlay */}
       {phase === 'prompt' && challenge && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-5">
@@ -84,21 +89,47 @@ export function GlobeSpinView() {
         </div>
       )}
 
+      {/* Hunting bottom panel — in flow, never covers globe */}
       {phase === 'hunting' && challenge && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/90 backdrop-blur-sm border-t border-slate-700/60 rounded-t-2xl pb-[env(safe-area-inset-bottom)]">
-          <div className="px-4 pt-3 pb-2 space-y-2">
-            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 select-none">{challenge.prompt}</p>
-            <HintDrawer hints={challenge.hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
-            <SubmitButton playerPin={playerPin} onSubmit={submitAnswer} />
+        <div className="shrink-0">
+          {/* Expandable hint section */}
+          <div
+            className={`overflow-hidden transition-[max-height] duration-300 ease-in-out bg-slate-900/95 backdrop-blur-sm border-t border-slate-700/40 ${
+              panelOpen ? 'max-h-[42vh]' : 'max-h-0'
+            }`}
+          >
+            <div className="px-4 pt-3 pb-2 overflow-y-auto max-h-[42vh]">
+              <p className="text-xs text-slate-400 leading-relaxed mb-2 select-none">{challenge.prompt}</p>
+              <HintDrawer hints={challenge.hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
+            </div>
+          </div>
+
+          {/* Collapsed bar — always visible, minimal */}
+          <div className={`bg-slate-900/80 backdrop-blur-sm border-t transition-colors duration-300 ${
+            panelOpen ? 'border-slate-700/40' : 'border-slate-800/30'
+          } px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center gap-2`}>
+            <button
+              onClick={() => setPanelOpen(o => !o)}
+              aria-label={panelOpen ? 'Collapse hints' : 'Expand hints'}
+              className="flex items-center gap-1.5 text-xs transition-colors shrink-0 py-1.5 px-2 rounded-lg hover:bg-slate-800"
+              style={{ color: panelOpen ? '#94a3b8' : '#475569' }}
+            >
+              {panelOpen
+                ? <ChevronDown className="w-3.5 h-3.5" />
+                : <Grip className="w-3.5 h-3.5" />
+              }
+              <span>Hints</span>
+            </button>
+            <div className="flex-1">
+              <SubmitButton playerPin={playerPin} onSubmit={submitAnswer} />
+            </div>
           </div>
         </div>
       )}
 
       {phase === 'submitted' && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/50">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
-          </div>
+          <div className="w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
@@ -108,6 +139,7 @@ export function GlobeSpinView() {
           challenge={challenge}
           roundsPlayed={roundsPlayed}
           sessionScore={sessionScore}
+          playerPin={playerPin}
           onNextRound={loadChallenge}
         />
       )}

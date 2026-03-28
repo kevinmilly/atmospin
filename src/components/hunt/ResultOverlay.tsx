@@ -1,10 +1,16 @@
+import { useEffect, useState } from 'react'
 import { MapPin, Clock, Lightbulb, ArrowRight, Sparkles, Target, CircleX } from 'lucide-react'
 import type { ScoreResult } from '@/store/hunt'
-import type { HuntChallenge, HistoricalEvent, Location } from '@/types'
+import type { HuntChallenge, HistoricalEvent, Location, GlobePoint } from '@/types'
+import { audio } from '@/lib/audio'
+import { reverseGeocode } from '@/lib/geo'
+import { useAchievementsStore } from '@/store/achievements'
+import { useSettingsStore, DIFFICULTY_CONFIG } from '@/store/settings'
 
 interface ResultOverlayProps {
   scoreResult: ScoreResult
   challenge: HuntChallenge & { event: HistoricalEvent; location: Location }
+  playerPin: GlobePoint | null
   onNextHunt: () => void
 }
 
@@ -15,9 +21,35 @@ function getRating(score: number): { label: string; color: string; bg: string; i
   return { label: 'Way Off!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
 }
 
-export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOverlayProps) {
+export function ResultOverlay({ scoreResult, challenge, playerPin, onNextHunt }: ResultOverlayProps) {
   const rating = getRating(scoreResult.totalScore)
   const Icon = rating.icon
+  const [pinLocationName, setPinLocationName] = useState<string | null>(null)
+  const recordRound = useAchievementsStore(s => s.recordRound)
+  const difficulty = useSettingsStore(s => s.difficulty)
+  const multiplier = DIFFICULTY_CONFIG[difficulty].multiplier
+
+  useEffect(() => {
+    if (scoreResult.totalScore >= 600) audio.success()
+    else if (scoreResult.totalScore < 200) audio.desync()
+
+    recordRound({
+      mode: 'hunt',
+      score: scoreResult.totalScore,
+      difficulty,
+      distanceKm: scoreResult.distanceKm,
+      hintsUsed: scoreResult.hintsUsed,
+      playedAt: new Date().toISOString(),
+      challengeName: challenge.event.title,
+      playerPin: playerPin ?? null,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!playerPin) return
+    reverseGeocode(playerPin.lat, playerPin.lng).then(setPinLocationName)
+  }, [playerPin])
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
@@ -40,6 +72,9 @@ export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOver
           <div className="text-right">
             <p className="text-3xl font-bold text-white tabular-nums">{scoreResult.totalScore}</p>
             <p className="text-xs text-slate-400">/ 1500</p>
+            {multiplier < 1 && (
+              <p className="text-[10px] text-indigo-400">{DIFFICULTY_CONFIG[difficulty].label} multiplier</p>
+            )}
           </div>
         </div>
 
@@ -65,18 +100,24 @@ export function ResultOverlay({ scoreResult, challenge, onNextHunt }: ResultOver
           </div>
         </div>
 
-        {/* Correct answer */}
+        {/* Pin comparison */}
         <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-emerald-500" />
+            <div className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
             <div>
               <p className="text-sm text-white font-medium">{challenge.event.title}</p>
-              <p className="text-xs text-slate-400">{challenge.location.name === challenge.location.country ? challenge.location.name : `${challenge.location.name}, ${challenge.location.country}`} — {challenge.event.year_start}</p>
+              <p className="text-xs text-slate-400">
+                {challenge.location.name === challenge.location.country
+                  ? challenge.location.name
+                  : `${challenge.location.name}, ${challenge.location.country}`} — {challenge.event.year_start}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <p className="text-sm text-slate-400">Your pin</p>
+            <div className="w-3 h-3 rounded-full bg-red-500 shrink-0" />
+            <p className="text-sm text-slate-400">
+              Your pin{pinLocationName ? ` · ${pinLocationName}` : ''}
+            </p>
           </div>
           {challenge.fun_fact && (
             <p className="text-xs text-indigo-300 italic pt-1 border-t border-slate-700/50">{challenge.fun_fact}</p>

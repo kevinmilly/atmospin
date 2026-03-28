@@ -3,11 +3,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useAppStore } from '@/store/app'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { AchievementToast } from '@/components/ui/AchievementToast'
 
 const HomeView = lazy(() => import('@/views/HomeView').then(m => ({ default: m.HomeView })))
 const HuntView = lazy(() => import('@/views/HuntView').then(m => ({ default: m.HuntView })))
 const GlobeSpinView = lazy(() => import('@/views/GlobeSpinView').then(m => ({ default: m.GlobeSpinView })))
 const LeaderboardView = lazy(() => import('@/views/LeaderboardView').then(m => ({ default: m.LeaderboardView })))
+const DashboardView = lazy(() => import('@/views/DashboardView').then(m => ({ default: m.DashboardView })))
 
 function ScreenLoader() {
   return (
@@ -41,19 +43,21 @@ function UpdateBanner() {
 export default function App() {
   return (
     <ErrorBoundary>
-    <BrowserRouter>
-      <UpdateBanner />
-      <div className="h-full">
-        <Suspense fallback={<ScreenLoader />}>
-          <Routes>
-            <Route path="/" element={<HomeView />} />
-            <Route path="/hunt" element={<HuntView />} />
-            <Route path="/globe-spin" element={<GlobeSpinView />} />
-            <Route path="/leaderboard" element={<LeaderboardView />} />
-          </Routes>
-        </Suspense>
-      </div>
-    </BrowserRouter>
+      <BrowserRouter>
+        <UpdateBanner />
+        <AchievementToast />
+        <div className="h-full">
+          <Suspense fallback={<ScreenLoader />}>
+            <Routes>
+              <Route path="/" element={<HomeView />} />
+              <Route path="/hunt" element={<HuntView />} />
+              <Route path="/globe-spin" element={<GlobeSpinView />} />
+              <Route path="/leaderboard" element={<LeaderboardView />} />
+              <Route path="/dashboard" element={<DashboardView />} />
+            </Routes>
+          </Suspense>
+        </div>
+      </BrowserRouter>
     </ErrorBoundary>
   )
 }

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, Compass, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen } from 'lucide-react'
+import { Trophy, Compass, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen, LayoutDashboard } from 'lucide-react'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOffline } from '@/hooks/useOffline'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { OnboardingModal } from '@/components/ui/OnboardingModal'
+import { DifficultySelector } from '@/components/ui/DifficultySelector'
 
 const ONBOARDING_KEY = 'atmospin_onboarded'
 
@@ -23,8 +24,7 @@ export function HomeView() {
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-8 p-6 relative overflow-hidden">
-      {/* Offline banner */}
+    <div className="h-full flex flex-col items-center justify-center gap-6 p-6 relative overflow-hidden">
       {isOffline && (
         <div className="absolute top-4 left-4 right-4 bg-amber-900/50 border border-amber-700 rounded-lg px-3 py-2 flex items-center gap-2">
           <WifiOff className="w-4 h-4 text-amber-400" />
@@ -32,7 +32,7 @@ export function HomeView() {
         </div>
       )}
 
-      {/* Logo splash */}
+      {/* Logo */}
       <div className="flex flex-col items-center gap-2">
         <img
           src="/logo-title.png"
@@ -41,6 +41,7 @@ export function HomeView() {
         />
       </div>
 
+      {/* Game buttons */}
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <button
           onClick={() => navigate('/hunt')}
@@ -56,17 +57,29 @@ export function HomeView() {
           <MapPin className="w-5 h-5" />
           Globe Spin
         </button>
-        <button
-          onClick={() => navigate('/leaderboard')}
-          className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-slate-500 text-slate-200 font-semibold py-4 px-6 rounded-xl transition-colors"
-        >
-          <Trophy className="w-5 h-5" />
-          Leaderboard
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => navigate('/leaderboard')}
+            className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-slate-500 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-colors text-sm"
+          >
+            <Trophy className="w-4 h-4" />
+            Leaderboard
+          </button>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-slate-500 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-colors text-sm"
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </button>
+        </div>
       </div>
 
+      {/* Difficulty selector */}
+      <DifficultySelector />
+
       {/* Bottom actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap justify-center">
         <button
           onClick={() => setShowOnboarding(true)}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors"

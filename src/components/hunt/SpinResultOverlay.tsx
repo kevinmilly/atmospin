@@ -1,12 +1,19 @@
+import { useEffect, useState } from 'react'
 import { MapPin, ArrowRight, Sparkles, Target, CircleX } from 'lucide-react'
 import type { SpinScoreResult } from '@/store/globeSpin'
 import type { GeoChallenge } from '@/store/globeSpin'
+import type { GlobePoint } from '@/types'
+import { audio } from '@/lib/audio'
+import { reverseGeocode } from '@/lib/geo'
+import { useAchievementsStore } from '@/store/achievements'
+import { useSettingsStore, DIFFICULTY_CONFIG } from '@/store/settings'
 
 interface SpinResultOverlayProps {
   scoreResult: SpinScoreResult
   challenge: GeoChallenge
   roundsPlayed: number
   sessionScore: number
+  playerPin: GlobePoint | null
   onNextRound: () => void
 }
 
@@ -19,14 +26,42 @@ function getRating(score: number): { label: string; color: string; bg: string; i
   return { label: 'On Another Continent!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
 }
 
-export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessionScore, onNextRound }: SpinResultOverlayProps) {
+export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessionScore, playerPin, onNextRound }: SpinResultOverlayProps) {
   const rating = getRating(scoreResult.totalScore)
   const Icon = rating.icon
+  const [pinLocationName, setPinLocationName] = useState<string | null>(null)
+  const recordRound = useAchievementsStore(s => s.recordRound)
+  const difficulty = useSettingsStore(s => s.difficulty)
+  const multiplier = DIFFICULTY_CONFIG[difficulty].multiplier
+
+  // Play sound and record achievements once on mount
+  useEffect(() => {
+    if (scoreResult.totalScore >= 500) audio.success()
+    else if (scoreResult.totalScore < 150) audio.desync()
+
+    recordRound({
+      mode: 'spin',
+      score: scoreResult.totalScore,
+      difficulty,
+      distanceKm: scoreResult.distanceKm,
+      hintsUsed: scoreResult.hintsUsed,
+      playedAt: new Date().toISOString(),
+      challengeName: challenge.name,
+      playerPin: playerPin ?? null,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Reverse-geocode player's pin
+  useEffect(() => {
+    if (!playerPin) return
+    reverseGeocode(playerPin.lat, playerPin.lng).then(setPinLocationName)
+  }, [playerPin])
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
       <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-w-lg mx-auto space-y-4 animate-slide-up`}>
-        {/* Rating + Score — compact horizontal layout */}
+        {/* Rating + Score */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -42,6 +77,9 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           <div className="text-right">
             <p className="text-3xl font-bold text-white tabular-nums">{scoreResult.totalScore}</p>
             <p className="text-xs text-slate-400">points</p>
+            {multiplier < 1 && (
+              <p className="text-[10px] text-indigo-400">{DIFFICULTY_CONFIG[difficulty].label} multiplier</p>
+            )}
           </div>
         </div>
 
@@ -55,19 +93,19 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           />
         </div>
 
-        {/* Your pin vs correct answer */}
+        {/* Pin comparison */}
         <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-emerald-500" />
+            <div className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
             <p className="text-sm text-white font-medium">
-              {challenge.name === challenge.country
-                ? challenge.name
-                : `${challenge.name}, ${challenge.country}`}
+              {challenge.name === challenge.country ? challenge.name : `${challenge.name}, ${challenge.country}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <p className="text-sm text-slate-400">Your pin</p>
+            <div className="w-3 h-3 rounded-full bg-red-500 shrink-0" />
+            <p className="text-sm text-slate-400">
+              Your pin{pinLocationName ? ` · ${pinLocationName}` : ''}
+            </p>
           </div>
           {challenge.fun_fact && (
             <p className="text-xs text-indigo-300 italic pt-1 border-t border-slate-700/50">
@@ -76,7 +114,6 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           )}
         </div>
 
-        {/* Hints penalty */}
         {scoreResult.hintsUsed > 0 && (
           <p className="text-xs text-amber-400 text-center">
             {scoreResult.hintsUsed} hint{scoreResult.hintsUsed > 1 ? 's' : ''} used (-{scoreResult.hintsUsed * 100} pts)

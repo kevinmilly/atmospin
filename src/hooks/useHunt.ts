@@ -3,6 +3,7 @@ import { useHuntStore } from '@/store/hunt'
 import { useGlobeStore } from '@/store/globe'
 import { calculateScore } from '@/engine/huntEngine'
 import { haptics } from '@/lib/haptics'
+import { useSettingsStore, DIFFICULTY_CONFIG } from '@/store/settings'
 import { seedChallenges } from '@/data/seed-challenges'
 import type { GlobePoint } from '@/types'
 
@@ -20,6 +21,8 @@ export function useHunt() {
   } = useHuntStore()
 
   const setGlobePin = useGlobeStore(s => s.setPin)
+  const difficulty = useSettingsStore(s => s.difficulty)
+  const multiplier = DIFFICULTY_CONFIG[difficulty].multiplier
 
   /** Load a random challenge (from local seed data for now) */
   const loadChallenge = useCallback(() => {
@@ -62,13 +65,15 @@ export function useHunt() {
       lng: challenge.location.lng,
     }
 
-    const result = calculateScore(
+    const rawResult = calculateScore(
       playerPin,
       playerYear,
       target,
       challenge.event.year_start,
       hintsRevealed,
     )
+
+    const result = { ...rawResult, totalScore: Math.round(rawResult.totalScore * multiplier) }
 
     setScoreResult(result)
 
