@@ -16,9 +16,6 @@ export interface GeoChallenge {
   quiz_question?: string
   quiz_answers?: string[]
   quiz_correct?: number
-  // Contextual clues
-  climate?: string
-  region_context?: string
 }
 
 export type SpinPhase = 'loading' | 'prompt' | 'hunting' | 'submitted' | 'result'

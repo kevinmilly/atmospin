@@ -52,11 +52,93 @@ async function runSparql(sparql: string): Promise<RawPlace[]> {
 
 const QUERIES = [
   {
-    label: 'UNESCO World Heritage Sites',
-    category: 'heritage',
+    label: 'Famous Rivers',
+    category: 'nature',
     sparql: (limit: number) => `
 SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
-  ?item wdt:P1435 wd:Q9259 .
+  ?item wdt:P31 wd:Q4022 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Active Volcanoes',
+    category: 'nature',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  ?item wdt:P31 wd:Q8072 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  ?item wdt:P18 [] .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Waterfalls',
+    category: 'nature',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  ?item wdt:P31 wd:Q34038 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Notable Deserts',
+    category: 'nature',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  ?item wdt:P31 wd:Q8514 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Notable Glaciers',
+    category: 'nature',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  ?item wdt:P31 wd:Q131596 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  ?item wdt:P18 [] .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Canyons & Gorges',
+    category: 'nature',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  VALUES ?type { wd:Q150784 wd:Q107685 }
+  ?item wdt:P31 ?type .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'National Parks',
+    category: 'nature',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  VALUES ?type { wd:Q46169 wd:Q179049 }
+  ?item wdt:P31 ?type .
   ?item p:P625/psv:P625 ?geo .
   ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
   ?item wdt:P17 ?country .
@@ -109,11 +191,39 @@ SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
 LIMIT ${limit}`,
   },
   {
-    label: 'Famous Monuments',
+    label: 'Famous Bridges',
     category: 'landmark',
     sparql: (limit: number) => `
 SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
-  VALUES ?type { wd:Q4989906 wd:Q839954 wd:Q570116 wd:Q33506 }
+  ?item wdt:P31 wd:Q12280 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  ?item wdt:P18 [] .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Historic Castles',
+    category: 'landmark',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  ?item wdt:P31 wd:Q23413 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  ?item wdt:P18 [] .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Famous Temples & Shrines',
+    category: 'landmark',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  VALUES ?type { wd:Q44539 wd:Q697295 }
   ?item wdt:P31 ?type .
   ?item p:P625/psv:P625 ?geo .
   ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
@@ -124,15 +234,29 @@ SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
 LIMIT ${limit}`,
   },
   {
-    label: 'National Parks',
+    label: 'Notable Caves',
     category: 'nature',
     sparql: (limit: number) => `
 SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
-  VALUES ?type { wd:Q46169 wd:Q179049 }
-  ?item wdt:P31 ?type .
+  ?item wdt:P31 wd:Q35509 .
   ?item p:P625/psv:P625 ?geo .
   ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
   ?item wdt:P17 ?country .
+  ?item wdt:P18 [] .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT ${limit}`,
+  },
+  {
+    label: 'Famous Lighthouses',
+    category: 'landmark',
+    sparql: (limit: number) => `
+SELECT DISTINCT ?item ?itemLabel ?lat ?lng ?countryLabel WHERE {
+  ?item wdt:P31 wd:Q39715 .
+  ?item p:P625/psv:P625 ?geo .
+  ?geo wikibase:geoLatitude ?lat ; wikibase:geoLongitude ?lng .
+  ?item wdt:P17 ?country .
+  ?item wdt:P18 [] .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 LIMIT ${limit}`,

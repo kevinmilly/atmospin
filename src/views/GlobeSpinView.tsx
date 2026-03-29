@@ -1,6 +1,6 @@
-import { useEffect, useRef, useMemo, useState } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Star, ChevronDown, Grip, Flame } from 'lucide-react'
+import { ArrowLeft, Globe, Star, Flame } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import { music } from '@/lib/music'
@@ -16,7 +16,6 @@ import { getStreakLabel, getStreakMultiplier } from '@/store/xp'
 
 export function GlobeSpinView() {
   const navigate = useNavigate()
-  const [panelOpen, setPanelOpen] = useState(false)
   const difficulty = useSettingsStore(s => s.difficulty)
   const currentStreak = useAchievementsStore(s => s.stats.currentStreak)
   const multiplier = getStreakMultiplier(currentStreak)
@@ -36,11 +35,10 @@ export function GlobeSpinView() {
 
   useEffect(() => {
     loadChallenge()
-    setPanelOpen(false)
     // Start game music when entering the game screen
     music.startGame()
     return () => music.stopGame(true) // restore theme on exit
-  }, [loadChallenge])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Stop game music when result is showing (let SFX breathe)
   useEffect(() => {
@@ -168,18 +166,6 @@ export function GlobeSpinView() {
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs capitalize">
                 {challenge.category === 'heritage' ? '🏛' : challenge.category === 'nature' ? '🌿' : '🗺'} {challenge.category}
               </span>
-              {/* Climate — if enriched */}
-              {challenge.climate && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-900/60 border border-teal-700/60 text-teal-300 text-xs">
-                  🌡 {challenge.climate}
-                </span>
-              )}
-              {/* Regional context — if enriched */}
-              {challenge.region_context && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-900/60 border border-amber-700/60 text-amber-300 text-xs">
-                  🧭 {challenge.region_context}
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -200,30 +186,15 @@ export function GlobeSpinView() {
 
       {/* Hunting bottom panel */}
       {phase === 'hunting' && challenge && (
-        <div className="shrink-0">
-          <div
-            className={`overflow-hidden transition-[max-height] duration-300 ease-in-out bg-slate-900/95 backdrop-blur-sm border-t border-slate-700/40 ${
-              panelOpen ? 'max-h-[42vh]' : 'max-h-0'
-            }`}
-          >
-            <div className="px-4 pt-3 pb-2 overflow-y-auto max-h-[42vh]">
-              <p className="text-xs text-slate-400 leading-relaxed mb-2 select-none">{challenge.prompt}</p>
-              <HintDrawer hints={challenge.hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
-            </div>
+        <div className="shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700/40">
+          {/* Always-visible prompt + expandable hints */}
+          <div className="px-4 pt-3 pb-2 overflow-y-auto max-h-[38vh]">
+            <p className="text-xs text-slate-300 leading-relaxed mb-2 select-none">{challenge.prompt}</p>
+            <HintDrawer hints={challenge.hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
           </div>
 
-          <div className={`bg-slate-900/80 backdrop-blur-sm border-t transition-colors duration-300 ${
-            panelOpen ? 'border-slate-700/40' : 'border-slate-800/30'
-          } px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center gap-2`}>
-            <button
-              onClick={() => setPanelOpen(o => !o)}
-              aria-label={panelOpen ? 'Collapse hints' : 'Expand hints'}
-              className="flex items-center gap-1.5 text-xs transition-colors shrink-0 py-1.5 px-2 rounded-lg hover:bg-slate-800"
-              style={{ color: panelOpen ? '#94a3b8' : '#475569' }}
-            >
-              {panelOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <Grip className="w-3.5 h-3.5" />}
-              <span>Hints</span>
-            </button>
+          {/* Submit row */}
+          <div className="px-4 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center gap-2 border-t border-slate-800/40">
             <TimerPill timeRemaining={timeRemaining} totalSeconds={totalSeconds} />
             <div className="flex-1">
               <SubmitButton playerPin={playerPin} onSubmit={submitAnswer} />

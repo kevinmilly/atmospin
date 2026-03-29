@@ -9,7 +9,18 @@
       "Bash(cp \"/c/Users/jamik/Downloads/desync-warn.wav\" \"/c/Users/jamik/kevinProjects/the-weave/public/sounds/desync-warn.wav\")",
       "Bash(mkdir -p \"/c/Users/jamik/kevinProjects/the-weave/public/sounds\")",
       "Bash(npm run:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node -e \":*)",
+      "Bash(node -e \"const d = require\\(''./src/data/geo-places.json''\\); console.log\\(''Count:'', d.length\\); console.log\\(''Sample:'', JSON.stringify\\(d[0], null, 2\\)\\)\")",
+      "Bash(python -c \"import sys,json; p=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in {**p.get\\(''''dependencies'''',{}\\),**p.get\\(''''devDependencies'''',{}\\)}.items\\(\\) if any\\(x in k for x in [''''supabase'''',''''anthropic'''',''''tsx'''',''''ts-node'''']\\)}, indent=2\\)\\)\")",
+      "Bash(node -e \"const p=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\)\\); const all={...p.dependencies,...p.devDependencies}; console.log\\(JSON.stringify\\(Object.fromEntries\\(Object.entries\\(all\\).filter\\(\\([k]\\)=>/\\(supabase|anthropic|tsx|ts-node|dotenv\\)/.test\\(k\\)\\)\\),null,2\\)\\)\")",
+      "Bash(npm install:*)",
+      "Bash(node -e \"require\\(''''./node_modules/@anthropic-ai/sdk/dist/index.js''''\\)\")",
+      "Bash(node -e \"require\\(''''./node_modules/tsx/dist/cli.cjs''''\\)\")",
+      "Bash(npx tsx:*)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''scripts/data/enriched-places.json'',''utf8''\\)\\); const p=d[0]; console.log\\(''Name:'', p.name\\); console.log\\(''Country:'', p.country\\); console.log\\(''Difficulty:'', p.difficulty\\); console.log\\(''Prompt:'', p.prompt\\); console.log\\(''Learn fact:'', p.learn_fact\\); console.log\\(''Quiz Q:'', p.quiz_question\\); console.log\\(''Answers:'', p.quiz_answers\\);\")",
+      "Bash(npx supabase:*)"
     ]
   }
 }

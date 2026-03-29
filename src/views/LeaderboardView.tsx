@@ -45,6 +45,22 @@ export function LeaderboardView() {
         </div>
       </header>
 
+      {!isAuthenticated && (
+        <div className="mx-4 mt-4 p-4 rounded-xl bg-indigo-950/60 border border-indigo-700/50 flex items-start gap-3">
+          <LogIn className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-indigo-200 font-medium">Sign in to track your scores</p>
+            <p className="text-xs text-indigo-400 mt-0.5">Your rounds won't be saved until you sign in. You can still see other players below.</p>
+          </div>
+          <button
+            onClick={() => setShowAuth(true)}
+            className="shrink-0 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Sign In
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-40 text-slate-400 text-sm">

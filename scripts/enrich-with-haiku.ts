@@ -39,6 +39,7 @@ export interface EnrichedPlace {
   quiz_question: string
   quiz_answers: string[]  // index 0 is always correct answer
   quiz_correct: number    // always 0
+  // Note: climate and region_context have been removed — geo context is embedded in prompt
 }
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -46,25 +47,38 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 async function enrichPlace(place: RawPlace): Promise<EnrichedPlace> {
   const msg = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 500,
+    max_tokens: 600,
     messages: [{
       role: 'user',
-      content: `You are writing content for a geography learning app called Atmospin.
+      content: `You are writing content for a geography guessing game called Atmospin. Players must place a pin on a globe to locate the place.
 
-Generate content for: ${place.name}, ${place.country} (category: ${place.category})
+Generate content for: ${place.name}, ${place.country} (category: ${place.category}, lat: ${place.lat.toFixed(1)}, lng: ${place.lng.toFixed(1)})
 
-Return ONLY valid JSON with exactly these fields:
+The PROMPT is the most important field. It must:
+- Be 1-2 sentences
+- NOT name the place, country, or any named sub-region
+- Naturally embed geographic orientation clues: hemisphere (north/south), broad climate zone (tropical, arid, temperate, polar, etc.), and broad region (e.g. "in Central Asia", "on the East African coast", "in the South Pacific")
+- Describe what makes the place distinctive — its physical form, scale, atmosphere, or phenomenon
+- Read as evocative, not encyclopedic — like a riddle, not a textbook sentence
+
+BAD example: "This is a UNESCO World Heritage Site in France."
+GOOD example: "Deep in the temperate rainforests of South America's southern cone, this ancient granite massif rises dramatically above a windswept Patagonian plateau."
+
+Return ONLY valid JSON:
 {
-  "difficulty": <1-5, where 1=very famous, 5=very obscure>,
-  "prompt": "<one sentence clue about the place without naming it>",
-  "hints": ["<continent/region hint>", "<country/area hint>", "<specific location hint>"],
-  "fun_fact": "<one interesting sentence fact>",
-  "learn_fact": "<2-3 sentences of weird-but-true trivia that would surprise someone>",
-  "quiz_question": "<a question testing the learn_fact>",
+  "difficulty": <1-5, 1=very famous globally, 5=very obscure>,
+  "prompt": "<1-2 sentence evocative clue with embedded geo context>",
+  "hints": ["<broad region/continent hint>", "<country or sub-region hint>", "<specific local detail>"],
+  "fun_fact": "<one surprising sentence>",
+  "learn_fact": "<2-3 sentences of genuinely weird-but-true trivia>",
+  "quiz_question": "<question testing the learn_fact>",
   "quiz_answers": ["<correct answer>", "<plausible wrong>", "<plausible wrong>", "<plausible wrong>"]
 }
 
-Rules: prompt must not contain the place name. quiz_answers[0] must always be the correct answer.`,
+Rules:
+- prompt must not contain the place name, country name, or any named geographic region (continent names are ok as part of orientation)
+- quiz_answers[0] is always correct
+- difficulty: 1 = Eiffel Tower level, 5 = obscure local landmark most people have never heard of`,
     }],
   })
 

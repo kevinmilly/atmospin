@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useGlobeSpinStore } from '@/store/globeSpin'
 import { useGlobeStore } from '@/store/globe'
 import { haversineDistance, calcDistanceScore, calcTotalScore, calcSpeedBonus } from '@/engine/huntEngine'
@@ -25,6 +25,10 @@ export function useGlobeSpin() {
     reset,
   } = useGlobeSpinStore()
 
+  // Use a ref so loadChallenge can read pendingChallenge without it being a dep
+  const pendingChallengeRef = useRef(pendingChallenge)
+  pendingChallengeRef.current = pendingChallenge
+
   const setGlobePin = useGlobeStore(s => s.setPin)
   const difficulty = useSettingsStore(s => s.difficulty)
   const difficultyMultiplier = DIFFICULTY_CONFIG[difficulty].multiplier
@@ -36,8 +40,9 @@ export function useGlobeSpin() {
     reset()
     setGlobePin(null)
     // Use prefetched challenge if available for instant round start
-    if (pendingChallenge) {
-      setChallenge(pendingChallenge)
+    const pending = pendingChallengeRef.current
+    if (pending) {
+      setChallenge(pending)
       setPendingChallenge(null)
       setPhase('prompt')
       return
@@ -49,7 +54,7 @@ export function useGlobeSpin() {
       // fetchRandomPlace has its own fallback; this should never throw
     }
     setPhase('prompt')
-  }, [reset, setGlobePin, setChallenge, setPhase, pendingChallenge, setPendingChallenge])
+  }, [reset, setGlobePin, setChallenge, setPhase, setPendingChallenge])
 
   const startHunting = useCallback(() => {
     setPhase('hunting')
