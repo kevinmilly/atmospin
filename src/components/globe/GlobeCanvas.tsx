@@ -274,9 +274,9 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
     }]
   }, [pinPoint, correctPoint])
 
-  // Country labels for Easy difficulty
+  // Country labels — computed whenever countries are loaded (difficulty gates display, not computation)
   const countryLabels = useMemo(() => {
-    if (difficulty !== 1 || !countries.length) return []
+    if (!countries.length) return []
     return countries
       .map(feat => {
         const centroid = getCentroid(feat)
@@ -284,7 +284,7 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
         return { lat: centroid.lat, lng: centroid.lng, text: feat.properties.ADMIN }
       })
       .filter((l): l is { lat: number; lng: number; text: string } => l !== null)
-  }, [difficulty, countries])
+  }, [countries])
 
   // Polygon colors
   const getPolygonCapColor = useCallback((d: object) => {
@@ -360,23 +360,24 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           arcsTransitionDuration={500}
           animateIn={true}
           waitForGlobeReady={true}
-          // Labels: at close zoom show city/region labels for everyone (navigation aid).
-          // At medium zoom, show according to difficulty.
+          // Labels: continent labels for everyone at medium zoom, country/region labels at close zoom.
+          // Difficulty only determines whether country-level labels show (Easy/Medium) or just regions.
           labelsData={
             zoomTier >= 3
-              ? (difficulty <= 2 ? [...countryLabels, ...REGION_LABELS] : REGION_LABELS)
-              : difficulty === 1 && zoomTier >= 2 ? [...CONTINENT_LABELS, ...countryLabels]
-              : difficulty === 2 && zoomTier >= 2 ? CONTINENT_LABELS
+              ? (difficulty <= 2 ? [...CONTINENT_LABELS, ...countryLabels, ...REGION_LABELS] : [...CONTINENT_LABELS, ...REGION_LABELS])
+              : zoomTier >= 2
+              ? (difficulty <= 2 ? [...CONTINENT_LABELS, ...countryLabels] : CONTINENT_LABELS)
               : []
           }
           labelLat="lat"
           labelLng="lng"
           labelText="text"
-          labelSize={zoomTier >= 3 ? 0.30 : 0.70}
+          labelSize={zoomTier >= 3 ? 0.6 : 1.4}
           labelColor={() => 'rgba(226,232,240,0.95)'}
+          labelBackgroundColor={() => 'rgba(0,0,0,0.35)'}
           labelResolution={3}
           labelDotRadius={0}
-          labelAltitude={0.025}
+          labelAltitude={0.02}
           // Ripple rings: green for correct answer, red for player pin
           ringsData={[
             ...(correctPoint ? [{ ...correctPoint, type: 'correct' }] : []),
