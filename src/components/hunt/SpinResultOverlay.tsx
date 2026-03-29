@@ -22,12 +22,17 @@ interface SpinResultOverlayProps {
 }
 
 function getRating(score: number) {
-  if (score >= 900) return { label: 'Bullseye!', color: 'text-emerald-400', bg: 'from-emerald-950/80 to-slate-900/95', icon: Target }
-  if (score >= 700) return { label: 'Great Shot!', color: 'text-blue-400', bg: 'from-blue-950/80 to-slate-900/95', icon: Sparkles }
-  if (score >= 500) return { label: 'Not Bad!', color: 'text-cyan-400', bg: 'from-cyan-950/60 to-slate-900/95', icon: MapPin }
-  if (score >= 300) return { label: 'Getting Warmer', color: 'text-amber-400', bg: 'from-amber-950/60 to-slate-900/95', icon: MapPin }
-  if (score >= 100) return { label: 'Way Off!', color: 'text-orange-400', bg: 'from-orange-950/60 to-slate-900/95', icon: CircleX }
-  return { label: 'Way Off Course!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
+  // Score mapping reference (1000 * exp(-dist/1500)):
+  //  ~990 = 15km  ~936 = 100km  ~716 = 500km  ~513 = 1000km
+  //  ~368 = 1500km  ~264 = 2000km  ~135 = 3000km  ~36 = 5000km
+  if (score >= 920) return { label: 'Bullseye!',       color: 'text-emerald-400', bg: 'from-emerald-950/80 to-slate-900/95', icon: Target }
+  if (score >= 750) return { label: 'Nailed It!',      color: 'text-green-400',   bg: 'from-green-950/80 to-slate-900/95',   icon: Sparkles }
+  if (score >= 560) return { label: 'Great Shot!',     color: 'text-blue-400',    bg: 'from-blue-950/80 to-slate-900/95',    icon: Sparkles }
+  if (score >= 380) return { label: 'Not Bad!',        color: 'text-cyan-400',    bg: 'from-cyan-950/60 to-slate-900/95',    icon: MapPin }
+  if (score >= 220) return { label: 'Getting Warmer',  color: 'text-amber-400',   bg: 'from-amber-950/60 to-slate-900/95',   icon: MapPin }
+  if (score >= 100) return { label: 'Wrong Continent?',color: 'text-orange-400',  bg: 'from-orange-950/60 to-slate-900/95',  icon: CircleX }
+  if (score >= 30)  return { label: 'Way Off!',        color: 'text-red-400',     bg: 'from-red-950/60 to-slate-900/95',     icon: CircleX }
+  return               { label: 'Lost in Space!',  color: 'text-rose-400',    bg: 'from-rose-950/60 to-slate-900/95',    icon: CircleX }
 }
 
 /** Animate a number from 0 to target over ~900ms */

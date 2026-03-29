@@ -6,6 +6,13 @@
 let themeEl: HTMLAudioElement | null = null
 let gameEl: HTMLAudioElement | null = null
 let fadeTimer: ReturnType<typeof setInterval> | null = null
+let _muted = false
+
+const MUTE_KEY = 'atmospin_muted'
+// Restore muted state from localStorage
+if (typeof localStorage !== 'undefined') {
+  _muted = localStorage.getItem(MUTE_KEY) === '1'
+}
 
 function clearFade() {
   if (fadeTimer !== null) { clearInterval(fadeTimer); fadeTimer = null }
@@ -26,6 +33,7 @@ function fadeOut(el: HTMLAudioElement, onDone?: () => void) {
 }
 
 function fadeIn(el: HTMLAudioElement, targetVolume: number) {
+  if (_muted) return
   clearFade()
   el.volume = 0
   el.play().catch(() => {/* autoplay blocked, silently skip */})
@@ -69,6 +77,20 @@ export const music = {
     }
     if (!gameEl.paused) return
     fadeIn(gameEl, 0.35)
+  },
+
+  get isMuted() { return _muted },
+
+  /** Toggle mute — pauses all audio immediately; restores on unmute. */
+  toggleMute() {
+    _muted = !_muted
+    localStorage.setItem(MUTE_KEY, _muted ? '1' : '0')
+    if (_muted) {
+      themeEl?.pause()
+      gameEl?.pause()
+    }
+    // On unmute, callers are responsible for resuming via startTheme/startGame
+    return _muted
   },
 
   /** Fade out in-game music. */

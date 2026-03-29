@@ -243,11 +243,25 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
     onGlobeClick?.({ lat, lng })
   }, [onGlobeClick, interactive])
 
-  // Pin marker data — player pin (red) + correct answer pin (green)
-  const pinData = useMemo(() => {
-    const pins: { lat: number; lng: number; color: string; size: number }[] = []
-    if (pinPoint) pins.push({ lat: pinPoint.lat, lng: pinPoint.lng, color: '#f43f5e', size: 0.6 })
-    if (correctPoint) pins.push({ lat: correctPoint.lat, lng: correctPoint.lng, color: '#22c55e', size: 0.8 })
+  // HTML map pin elements — teardrop shape with label
+  const makePinEl = useCallback((color: string, label: string) => {
+    const el = document.createElement('div')
+    el.style.cssText = 'display:flex;flex-direction:column;align-items:center;pointer-events:none;transform:translateY(-100%)'
+    el.innerHTML = `
+      <svg viewBox="0 0 24 32" width="26" height="34" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6))">
+        <path d="M12 1C7.03 1 3 5.03 3 10c0 7 9 21 9 21s9-14 9-21c0-4.97-4.03-9-9-9z"
+          fill="${color}" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+        <circle cx="12" cy="10" r="4" fill="rgba(255,255,255,0.9)"/>
+      </svg>
+      <span style="color:white;font-size:10px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,0.9);white-space:nowrap;margin-top:1px">${label}</span>
+    `
+    return el
+  }, [])
+
+  const htmlPinData = useMemo(() => {
+    const pins: { lat: number; lng: number; color: string; label: string }[] = []
+    if (pinPoint) pins.push({ lat: pinPoint.lat, lng: pinPoint.lng, color: '#f43f5e', label: 'You' })
+    if (correctPoint) pins.push({ lat: correctPoint.lat, lng: correctPoint.lng, color: '#22c55e', label: 'Answer' })
     return pins
   }, [pinPoint, correctPoint])
 
@@ -324,13 +338,15 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           onPolygonClick={handlePolygonClick}
           onPolygonHover={handlePolygonHover}
           onGlobeClick={handleGlobeClick}
-          pointsData={pinData}
-          pointLat="lat"
-          pointLng="lng"
-          pointColor="color"
-          pointAltitude={0.12}
-          pointRadius="size"
-          pointsTransitionDuration={200}
+          htmlElementsData={htmlPinData}
+          htmlElement={(d: object) => {
+            const p = d as { color: string; label: string }
+            return makePinEl(p.color, p.label)
+          }}
+          htmlLat="lat"
+          htmlLng="lng"
+          htmlAltitude={0.05}
+          htmlTransitionDuration={300}
           arcsData={arcData}
           arcStartLat="startLat"
           arcStartLng="startLng"
@@ -344,28 +360,34 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           arcsTransitionDuration={500}
           animateIn={true}
           waitForGlobeReady={true}
-          // Labels scale with zoom tier — no labels while spinning (tier 1)
+          // Labels: at close zoom show city/region labels for everyone (navigation aid).
+          // At medium zoom, show according to difficulty.
           labelsData={
-            difficulty === 1 && zoomTier >= 3 ? [...countryLabels, ...REGION_LABELS] :
-            difficulty === 1 && zoomTier >= 2 ? [...CONTINENT_LABELS, ...countryLabels] :
-            difficulty === 2 && zoomTier >= 2 ? CONTINENT_LABELS :
-            []
+            zoomTier >= 3
+              ? (difficulty <= 2 ? [...countryLabels, ...REGION_LABELS] : REGION_LABELS)
+              : difficulty === 1 && zoomTier >= 2 ? [...CONTINENT_LABELS, ...countryLabels]
+              : difficulty === 2 && zoomTier >= 2 ? CONTINENT_LABELS
+              : []
           }
           labelLat="lat"
           labelLng="lng"
           labelText="text"
-          labelSize={zoomTier >= 3 ? 0.55 : 0.80}
+          labelSize={zoomTier >= 3 ? 0.30 : 0.70}
           labelColor={() => 'rgba(226,232,240,0.95)'}
-          labelResolution={2}
-          labelAltitude={0.01}
-          // Accuracy ripple rings at correct answer location
-          ringsData={correctPoint ? [correctPoint] : []}
+          labelResolution={3}
+          labelDotRadius={0}
+          labelAltitude={0.025}
+          // Ripple rings: green for correct answer, red for player pin
+          ringsData={[
+            ...(correctPoint ? [{ ...correctPoint, type: 'correct' }] : []),
+            ...(pinPoint && !correctPoint ? [{ ...pinPoint, type: 'player' }] : []),
+          ]}
           ringLat="lat"
           ringLng="lng"
-          ringColor={() => 'rgba(34,197,94,0.7)'}
-          ringMaxRadius={3.5}
-          ringPropagationSpeed={2.5}
-          ringRepeatPeriod={900}
+          ringColor={(d: object) => (d as { type: string }).type === 'correct' ? 'rgba(34,197,94,0.65)' : 'rgba(244,63,94,0.55)'}
+          ringMaxRadius={2.5}
+          ringPropagationSpeed={2}
+          ringRepeatPeriod={1200}
         />
       )}
 

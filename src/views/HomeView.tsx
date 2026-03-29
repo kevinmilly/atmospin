@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen, LayoutDashboard } from 'lucide-react'
+import { Trophy, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen, LayoutDashboard, Volume2, VolumeX } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOffline } from '@/hooks/useOffline'
@@ -21,6 +21,13 @@ export function HomeView() {
   const { isAuthenticated, user, signOut } = useAuth()
   const [showAuth, setShowAuth] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY))
+  const [muted, setMuted] = useState(() => music.isMuted)
+
+  function toggleMusic() {
+    const nowMuted = music.toggleMute()
+    setMuted(nowMuted)
+    if (!nowMuted) music.startTheme()
+  }
 
   // Start theme on mount, clean up on unmount
   useEffect(() => {
@@ -42,6 +49,15 @@ export function HomeView() {
 
       {/* Dark gradient overlay so text is legible */}
       <div className="absolute inset-0 z-[1] bg-gradient-to-b from-slate-950/60 via-slate-950/30 to-slate-950/80 pointer-events-none" />
+
+      {/* Music toggle */}
+      <button
+        onClick={toggleMusic}
+        aria-label={muted ? 'Unmute music' : 'Mute music'}
+        className="absolute top-4 right-4 z-20 w-9 h-9 rounded-lg bg-slate-800/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+      >
+        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+      </button>
 
       {/* Offline banner */}
       {isOffline && (
