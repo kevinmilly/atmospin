@@ -4,10 +4,13 @@ import { ArrowLeft, Trophy, RefreshCw, LogIn } from 'lucide-react'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { getDailyKey } from '@/lib/daily'
 
 export function LeaderboardView() {
   const navigate = useNavigate()
-  const { entries, loading, refresh } = useLeaderboard()
+  const [tab, setTab] = useState<'all' | 'daily'>('all')
+  const dailyKey = getDailyKey()
+  const { entries, loading, refresh } = useLeaderboard({ mode: tab, dailyKey })
   const { isAuthenticated, user } = useAuth()
   const [showAuth, setShowAuth] = useState(false)
 
@@ -45,6 +48,24 @@ export function LeaderboardView() {
         </div>
       </header>
 
+      <div className="px-4 pt-4">
+        <div className="inline-flex rounded-xl border border-slate-700 bg-slate-900/80 p-1">
+          {(['all', 'daily'] as const).map(option => (
+            <button
+              key={option}
+              onClick={() => setTab(option)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                tab === option
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {option === 'all' ? 'All-Time' : `Daily · ${dailyKey}`}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {!isAuthenticated && (
         <div className="mx-4 mt-4 p-4 rounded-xl bg-indigo-950/60 border border-indigo-700/50 flex items-start gap-3">
           <LogIn className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
@@ -72,7 +93,7 @@ export function LeaderboardView() {
             <p>No scores yet</p>
             <p className="text-xs text-slate-600">
               {isAuthenticated
-                ? 'Play a hunt to get on the board!'
+                ? tab === 'daily' ? 'Play today\'s daily to get on the board!' : 'Play a hunt to get on the board!'
                 : 'Sign in and play to appear here'}
             </p>
           </div>

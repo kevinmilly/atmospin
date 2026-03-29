@@ -6,6 +6,8 @@ interface GeoScoreParams {
   score: number
   distanceKm: number
   difficulty: number
+  runMode?: 'quick' | 'sprint' | 'daily'
+  dailyKey?: string | null
 }
 
 /** Persist a Globe Spin round score to Supabase. Fire-and-forget — never throws. */
@@ -18,6 +20,8 @@ export async function submitGeoScore(params: GeoScoreParams): Promise<void> {
       score: params.score,
       distance_km: params.distanceKm,
       difficulty: params.difficulty,
+      run_mode: params.runMode ?? 'quick',
+      daily_key: params.dailyKey ?? null,
     })
   } catch {
     // Non-critical — scores are best-effort

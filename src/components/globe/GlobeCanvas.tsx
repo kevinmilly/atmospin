@@ -11,6 +11,18 @@ interface CountryFeature {
   geometry: { type: string; coordinates: number[][][] | number[][][][] }
 }
 
+interface GlobeViewpoint {
+  lat: number
+  lng: number
+  altitude: number
+}
+
+interface GlobeLabel {
+  lat: number
+  lng: number
+  text: string
+}
+
 // Color palette for countries — muted dark tones so they don't overpower
 const COUNTRY_COLORS = [
   'rgba(99, 102, 241, 0.35)',   // indigo
@@ -147,6 +159,15 @@ function getCentroid(feature: CountryFeature): { lat: number; lng: number } | nu
   }
 }
 
+function angularDistance(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const lat1 = toRad(a.lat)
+  const lat2 = toRad(b.lat)
+  const deltaLng = toRad(b.lng - a.lng)
+  const cosDistance = Math.sin(lat1) * Math.sin(lat2) + Math.cos(lat1) * Math.cos(lat2) * Math.cos(deltaLng)
+  return Math.acos(Math.min(1, Math.max(-1, cosDistance))) * (180 / Math.PI)
+}
+
 interface GlobeCanvasProps {
   onGlobeClick?: (point: GlobePoint) => void
   pinPoint?: GlobePoint | null
@@ -162,8 +183,13 @@ interface GlobeCanvasProps {
 export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive = true, difficulty = 4, focusPoint, autoRotate = false }: GlobeCanvasProps) {
   const globeRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
   const containerRef = useRef<HTMLDivElement>(null)
+  const controlsRef = useRef<{ removeEventListener: (type: string, listener: EventListenerOrEventListenerObject) => void } | null>(null)
+  const handleChangeRef = useRef<(() => void) | null>(null)
+  const labelFrameRef = useRef<number | null>(null)
+  const lastLabelUpdateRef = useRef(0)
   const [countries, setCountries] = useState<CountryFeature[]>([])
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const [labelViewpoint, setLabelViewpoint] = useState<GlobeViewpoint>({ lat: 20, lng: 0, altitude: 2.5 })
   const setViewpoint = useGlobeStore(s => s.setViewpoint)
   const setHoveredCountry = useGlobeStore(s => s.setHoveredCountry)
   const hoveredCountry = useGlobeStore(s => s.hoveredCountry)
@@ -196,15 +222,43 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
     const controls = globe.controls()
     if (!controls) return
 
+    if (controlsRef.current && handleChangeRef.current) {
+      controlsRef.current.removeEventListener('change', handleChangeRef.current)
+    }
+
     const handleChange = () => {
       const pov = globe.pointOfView()
-      if (pov) setViewpoint({ lat: pov.lat, lng: pov.lng, altitude: pov.altitude ?? 2.5 })
+      if (!pov) return
+
+      const nextViewpoint = { lat: pov.lat, lng: pov.lng, altitude: pov.altitude ?? 2.5 }
+      setViewpoint(nextViewpoint)
+
+      const now = performance.now()
+      if (now - lastLabelUpdateRef.current < 90) return
+      lastLabelUpdateRef.current = now
+
+      if (labelFrameRef.current !== null) cancelAnimationFrame(labelFrameRef.current)
+      labelFrameRef.current = requestAnimationFrame(() => {
+        setLabelViewpoint(nextViewpoint)
+        labelFrameRef.current = null
+      })
     }
 
     // Seed the initial zoom tier immediately
     handleChange()
     controls.addEventListener('change', handleChange)
+    controlsRef.current = controls
+    handleChangeRef.current = handleChange
   }, [setViewpoint])
+
+  useEffect(() => {
+    return () => {
+      if (controlsRef.current && handleChangeRef.current) {
+        controlsRef.current.removeEventListener('change', handleChangeRef.current)
+      }
+      if (labelFrameRef.current !== null) cancelAnimationFrame(labelFrameRef.current)
+    }
+  }, [])
 
   // Fly camera to focusPoint when it changes
   useEffect(() => {
@@ -273,7 +327,7 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
   }, [pinPoint, correctPoint])
 
   // Country labels — computed whenever countries are loaded (difficulty gates display, not computation)
-  const countryLabels = useMemo(() => {
+  const countryLabels = useMemo<GlobeLabel[]>(() => {
     if (!countries.length) return []
     return countries
       .map(feat => {
@@ -283,6 +337,33 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
       })
       .filter((l): l is { lat: number; lng: number; text: string } => l !== null)
   }, [countries])
+
+  const allLabels = useMemo<GlobeLabel[]>(() => {
+    if (zoomTier < 2) return []
+    if (zoomTier >= 3) {
+      return difficulty <= 2
+        ? [...CONTINENT_LABELS, ...countryLabels, ...REGION_LABELS]
+        : [...CONTINENT_LABELS, ...REGION_LABELS]
+    }
+    return difficulty <= 2 ? [...CONTINENT_LABELS, ...countryLabels] : CONTINENT_LABELS
+  }, [countryLabels, difficulty, zoomTier])
+
+  const visibleLabels = useMemo(() => {
+    if (!allLabels.length) return []
+
+    const maxAngularDistance = zoomTier >= 3 ? 58 : 92
+    const maxVisibleLabels =
+      zoomTier >= 3
+        ? (difficulty <= 2 ? 42 : 24)
+        : (difficulty <= 2 ? 28 : 12)
+
+    return allLabels
+      .map(label => ({ label, distance: angularDistance(labelViewpoint, label) }))
+      .filter(({ distance }) => distance <= maxAngularDistance)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, maxVisibleLabels)
+      .map(({ label }) => label)
+  }, [allLabels, difficulty, labelViewpoint, zoomTier])
 
   // Polygon colors
   const getPolygonCapColor = useCallback((d: object) => {
@@ -361,13 +442,7 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           onGlobeReady={handleGlobeReady}
           // Labels: continent labels for everyone at medium zoom, country/region labels at close zoom.
           // Difficulty only determines whether country-level labels show (Easy/Medium) or just regions.
-          labelsData={
-            zoomTier >= 3
-              ? (difficulty <= 2 ? [...CONTINENT_LABELS, ...countryLabels, ...REGION_LABELS] : [...CONTINENT_LABELS, ...REGION_LABELS])
-              : zoomTier >= 2
-              ? (difficulty <= 2 ? [...CONTINENT_LABELS, ...countryLabels] : CONTINENT_LABELS)
-              : []
-          }
+          labelsData={visibleLabels}
           labelLat="lat"
           labelLng="lng"
           labelText="text"

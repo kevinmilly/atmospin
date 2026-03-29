@@ -7,6 +7,7 @@
 import { supabase } from './supabase'
 import type { GeoChallenge } from '@/store/globeSpin'
 import localPlaces from '@/data/geo-places.json'
+import { estimateContinent } from './geo'
 
 const CACHE_KEY = 'atmospin_places_cache'
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
@@ -20,6 +21,29 @@ let primePromise: Promise<void> | null = null
 interface CacheEntry {
   places: GeoChallenge[]
   ts: number
+}
+
+export interface FetchPlaceOptions {
+  difficulty?: number
+  continent?: string
+  excludeIds?: string[]
+}
+
+function normalizePlace(place: GeoChallenge): GeoChallenge {
+  return {
+    ...place,
+    continent: place.continent ?? estimateContinent(place.lat, place.lng),
+  }
+}
+
+function matchesFilters(place: GeoChallenge, options: FetchPlaceOptions) {
+  if (options.difficulty && place.difficulty !== options.difficulty) return false
+  if (options.continent) {
+    const continent = place.continent ?? estimateContinent(place.lat, place.lng)
+    if (continent !== options.continent) return false
+  }
+  if (options.excludeIds?.includes(place.id)) return false
+  return true
 }
 
 function readCache(): GeoChallenge[] | null {
@@ -43,15 +67,13 @@ function writeCache(places: GeoChallenge[]) {
   }
 }
 
-function pickAndRemove(pool: GeoChallenge[], difficulty?: number): GeoChallenge | null {
-  const candidates = difficulty
-    ? pool.filter(p => p.difficulty === difficulty)
-    : pool
+function pickAndRemove(pool: GeoChallenge[], options: FetchPlaceOptions = {}): GeoChallenge | null {
+  const candidates = pool.filter(p => matchesFilters(p, options))
   if (candidates.length === 0) return null
   const pick = candidates[Math.floor(Math.random() * candidates.length)]
   const idx = pool.indexOf(pick)
   if (idx !== -1) pool.splice(idx, 1)
-  return pick
+  return normalizePlace(pick)
 }
 
 /** Prime the in-memory pool. Called once on app init; subsequent calls are no-ops. */
@@ -68,7 +90,7 @@ export async function primePlacesCache() {
           .limit(POOL_SIZE)
 
         if (data && data.length > 0) {
-          placePool = data as GeoChallenge[]
+          placePool = (data as GeoChallenge[]).map(normalizePlace)
           // Shuffle pool for randomness
           for (let i = placePool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -85,7 +107,7 @@ export async function primePlacesCache() {
 
     // Fall back: use localStorage cache or local JSON
     const cached = readCache()
-    placePool = cached ?? (localPlaces as GeoChallenge[]).slice()
+    placePool = (cached ?? (localPlaces as GeoChallenge[])).map(normalizePlace).slice()
     // Shuffle
     for (let i = placePool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -98,33 +120,31 @@ export async function primePlacesCache() {
 }
 
 /** Fetch a random place — uses in-memory pool first (O(1), no network), refills if empty. */
-export async function fetchRandomPlace(difficulty?: number): Promise<GeoChallenge> {
+export async function fetchRandomPlace(options: FetchPlaceOptions = {}): Promise<GeoChallenge> {
   // Ensure pool is primed (no-op if already done)
   if (!poolPrimed) await primePlacesCache()
 
   // Try in-memory pool first
-  const fromPool = pickAndRemove(placePool, difficulty)
+  const fromPool = pickAndRemove(placePool, options)
   if (fromPool) return fromPool
 
   // Pool exhausted for this difficulty — refill from Supabase
   if (supabase) {
     try {
-      let query = supabase
+      const query = supabase
         .from('geo_places')
-        .select('id,name,country,lat,lng,category,difficulty,prompt,hints,fun_fact')
+        .select('id,name,country,lat,lng,continent,subregion,category,difficulty,prompt,hints,fun_fact')
 
-      if (difficulty) query = query.eq('difficulty', difficulty)
-
-      const { data, error } = await query.limit(POOL_SIZE)
+      const { data, error } = await query.limit(Math.max(POOL_SIZE, 1000))
 
       if (!error && data && data.length > 0) {
         // Refill pool with fresh data
-        placePool = data as GeoChallenge[]
+        placePool = (data as GeoChallenge[]).map(normalizePlace)
         for (let i = placePool.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [placePool[i], placePool[j]] = [placePool[j], placePool[i]]
         }
-        const pick = pickAndRemove(placePool, difficulty)
+        const pick = pickAndRemove(placePool, options)
         if (pick) return pick
       }
     } catch {
@@ -133,10 +153,12 @@ export async function fetchRandomPlace(difficulty?: number): Promise<GeoChalleng
   }
 
   // Local JSON fallback
-  const pool = difficulty
-    ? (localPlaces as GeoChallenge[]).filter(p => p.difficulty === difficulty)
-    : (localPlaces as GeoChallenge[])
-  return pool[Math.floor(Math.random() * pool.length)]
+  const pool = (localPlaces as GeoChallenge[])
+    .map(normalizePlace)
+    .filter(p => matchesFilters(p, options))
+  if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)]
+  const fallbackPool = (localPlaces as GeoChallenge[]).map(normalizePlace)
+  return fallbackPool[Math.floor(Math.random() * fallbackPool.length)]
 }
 
 /** Fetch a random place that has Learn Mode content. */

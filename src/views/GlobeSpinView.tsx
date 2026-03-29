@@ -1,32 +1,54 @@
-import { useEffect, useRef, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Star, Flame } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useMemo, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Flame, Globe, Star } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
-import { music } from '@/lib/music'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
-import { SubmitButton } from '@/components/hunt/SubmitButton'
+import { RunSummaryOverlay } from '@/components/hunt/RunSummaryOverlay'
 import { SpinResultOverlay } from '@/components/hunt/SpinResultOverlay'
+import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { TimerPill } from '@/components/hunt/TimerPill'
 import { useGlobeSpin } from '@/hooks/useGlobeSpin'
-import { useSettingsStore } from '@/store/settings'
-import { useGlobeSpinStore, TIMER_SECONDS } from '@/store/globeSpin'
+import { getDailyKey } from '@/lib/daily'
+import { music } from '@/lib/music'
 import { useAchievementsStore } from '@/store/achievements'
+import { useOnboardingStore } from '@/store/onboarding'
+import { useSettingsStore } from '@/store/settings'
+import { TIMER_SECONDS, useGlobeSpinStore } from '@/store/globeSpin'
 import { getStreakLabel, getStreakMultiplier } from '@/store/xp'
 
 export function GlobeSpinView() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const difficulty = useSettingsStore(s => s.difficulty)
   const currentStreak = useAchievementsStore(s => s.stats.currentStreak)
   const multiplier = getStreakMultiplier(currentStreak)
   const streakLabel = getStreakLabel(currentStreak)
+  const configureRun = useGlobeSpinStore(s => s.configureRun)
+  const resetSession = useGlobeSpinStore(s => s.resetSession)
+  const gameCoachSeen = useOnboardingStore(s => s.gameCoachSeen)
+  const markGameCoachSeen = useOnboardingStore(s => s.markGameCoachSeen)
 
   const {
-    phase, challenge, playerPin, hintsRevealed,
-    scoreResult, roundsPlayed, sessionScore,
+    phase,
+    challenge,
+    playerPin,
+    hintsRevealed,
+    scoreResult,
+    roundsPlayed,
+    sessionScore,
+    runMode,
+    maxRounds,
+    sessionRounds,
+    previousRound,
+    bestDistanceThisSession,
+    dailyKey,
     timeRemaining,
-    loadChallenge, startHunting, placePin,
-    submitAnswer, useHint,
+    loadChallenge,
+    startHunting,
+    placePin,
+    submitAnswer,
+    useHint,
   } = useGlobeSpin()
 
   const { startTimer, tickTimer } = useGlobeSpinStore()
@@ -34,19 +56,29 @@ export function GlobeSpinView() {
   const totalSeconds = TIMER_SECONDS[difficulty] ?? 0
 
   useEffect(() => {
+    const requestedMode = searchParams.get('mode') === 'daily'
+      ? 'daily'
+      : searchParams.get('mode') === 'sprint'
+      ? 'sprint'
+      : 'quick'
+    configureRun(requestedMode)
+    resetSession()
     loadChallenge()
-    // Start game music when entering the game screen
     music.startGame()
-    return () => music.stopGame(true) // restore theme on exit
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    return () => music.stopGame(true)
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Stop game music when result is showing (let SFX breathe)
   useEffect(() => {
-    if (phase === 'result') music.stopGame()
+    if (phase === 'result' || phase === 'summary') music.stopGame()
     if (phase === 'hunting') music.startGame()
   }, [phase])
 
-  // Timer loop — only for difficulty > 1
+  useEffect(() => {
+    if ((phase === 'result' || phase === 'summary') && !gameCoachSeen) {
+      markGameCoachSeen()
+    }
+  }, [phase, gameCoachSeen, markGameCoachSeen])
+
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     if (phase === 'hunting' && totalSeconds > 0) {
@@ -58,7 +90,6 @@ export function GlobeSpinView() {
     }
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-submit when timer reaches 0
   useEffect(() => {
     if (timeRemaining === 0 && phase === 'hunting') {
       submitAnswer()
@@ -66,23 +97,28 @@ export function GlobeSpinView() {
   }, [timeRemaining, phase, submitAnswer])
 
   const correctPoint = useMemo(() => {
-    if ((phase === 'result' || phase === 'submitted') && challenge) {
+    if ((phase === 'result' || phase === 'submitted' || phase === 'summary') && challenge) {
       return { lat: challenge.lat, lng: challenge.lng }
     }
     return null
   }, [phase, challenge])
 
-  // Camera flies to correct answer when result is revealed
   const focusPoint = useMemo(() => {
-    if (phase === 'result' && challenge) {
+    if ((phase === 'result' || phase === 'summary') && challenge) {
       return { lat: challenge.lat, lng: challenge.lng }
     }
     return null
   }, [phase, challenge])
+
+  const sessionBadge = runMode === 'sprint' && maxRounds
+    ? `Round ${Math.min(roundsPlayed + 1, maxRounds)} / ${maxRounds} · ${sessionScore} pts`
+    : runMode === 'daily' && maxRounds
+    ? `Daily ${Math.min(roundsPlayed + 1, maxRounds)} / ${maxRounds} · ${sessionScore} pts`
+    : `Round ${roundsPlayed + 1} · ${sessionScore} pts`
+  const showCoach = !gameCoachSeen && (searchParams.get('coach') === '1' || roundsPlayed === 0)
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden touch-manipulation">
-      {/* Floating header */}
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pointer-events-none">
         <button
           onClick={() => { music.stopGame(true); navigate('/') }}
@@ -93,7 +129,6 @@ export function GlobeSpinView() {
         </button>
 
         <div className="flex items-center gap-2 pointer-events-none">
-          {/* Streak multiplier badge */}
           <AnimatePresence>
             {currentStreak >= 3 && (
               <motion.div
@@ -117,13 +152,12 @@ export function GlobeSpinView() {
 
           {roundsPlayed > 0 && (
             <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300">
-              Round {roundsPlayed + 1} · {sessionScore} pts
+              {sessionBadge}
             </div>
           )}
         </div>
       </header>
 
-      {/* Globe */}
       <div className="flex-1 min-h-0">
         <GlobeCanvas
           onGlobeClick={placePin}
@@ -135,7 +169,6 @@ export function GlobeSpinView() {
         />
       </div>
 
-      {/* Prompt overlay */}
       {phase === 'prompt' && challenge && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6">
           <motion.div
@@ -144,27 +177,36 @@ export function GlobeSpinView() {
             transition={{ type: 'spring', stiffness: 350, damping: 28 }}
             className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-5"
           >
-            <div className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">Globe Spin</span>
-            </div>
-            <p className="text-lg text-white leading-relaxed">{challenge.prompt}</p>
-
-            {/* Ambient contextual clue pills — free hints to orient the player */}
-            <div className="flex flex-wrap gap-1.5">
-              {/* Hemisphere — derived from lat, always available */}
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-900/60 border border-sky-700/60 text-sky-300 text-xs">
-                {challenge.lat >= 0 ? '🌍 Northern Hemisphere' : '🌏 Southern Hemisphere'}
-              </span>
-              {/* Continent — first hint, always present */}
-              {challenge.hints?.[0] && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-900/60 border border-violet-700/60 text-violet-300 text-xs">
-                  📍 {challenge.hints[0]}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-400">Globe Spin</span>
+              </div>
+              {runMode === 'sprint' && maxRounds && (
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-indigo-300">
+                  Sprint {roundsPlayed + 1}/{maxRounds}
                 </span>
               )}
-              {/* Category badge */}
+              {runMode === 'daily' && maxRounds && (
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+                  Daily {roundsPlayed + 1}/{maxRounds}
+                </span>
+              )}
+            </div>
+
+            <p className="text-lg text-white leading-relaxed">{challenge.prompt}</p>
+
+            <div className="flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-900/60 border border-sky-700/60 text-sky-300 text-xs">
+                {challenge.lat >= 0 ? 'Northern Hemisphere' : 'Southern Hemisphere'}
+              </span>
+              {challenge.continent && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-900/60 border border-violet-700/60 text-violet-300 text-xs">
+                  {challenge.continent}
+                </span>
+              )}
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs capitalize">
-                {challenge.category === 'heritage' ? '🏛' : challenge.category === 'nature' ? '🌿' : '🗺'} {challenge.category}
+                {challenge.category}
               </span>
             </div>
 
@@ -174,6 +216,13 @@ export function GlobeSpinView() {
               ))}
               <span className="text-xs text-slate-400 ml-2">Difficulty {challenge.difficulty}/5</span>
             </div>
+
+            {showCoach && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-3 py-2">
+                <p className="text-xs text-emerald-200 font-medium">Read the clue, then start the round. You can zoom, spin, and tap the globe once you are hunting.</p>
+              </div>
+            )}
+
             <button
               onClick={startHunting}
               className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
@@ -184,16 +233,19 @@ export function GlobeSpinView() {
         </div>
       )}
 
-      {/* Hunting bottom panel */}
       {phase === 'hunting' && challenge && (
         <div className="shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700/40">
-          {/* Always-visible prompt + expandable hints */}
           <div className="px-4 pt-3 pb-2 overflow-y-auto max-h-[38vh]">
             <p className="text-xs text-slate-300 leading-relaxed mb-2 select-none">{challenge.prompt}</p>
+            {showCoach && (
+              <div className="mb-2 rounded-xl border border-indigo-500/30 bg-indigo-950/30 px-3 py-2 space-y-1">
+                <p className="text-xs text-indigo-200 font-medium">Zoom in, spin the globe, then tap to place your pin.</p>
+                <p className="text-[11px] text-indigo-300/80">Use a hint if you are stuck. Lock in when the pin feels right.</p>
+              </div>
+            )}
             <HintDrawer hints={challenge.hints} hintsRevealed={hintsRevealed} onRevealHint={useHint} />
           </div>
 
-          {/* Submit row */}
           <div className="px-4 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center gap-2 border-t border-slate-800/40">
             <TimerPill timeRemaining={timeRemaining} totalSeconds={totalSeconds} />
             <div className="flex-1">
@@ -217,6 +269,25 @@ export function GlobeSpinView() {
           sessionScore={sessionScore}
           playerPin={playerPin}
           onNextRound={loadChallenge}
+          onRedeemRegion={() => loadChallenge({
+            continent: challenge.continent,
+            excludeIds: [challenge.id],
+          })}
+          previousRound={previousRound}
+          bestDistanceThisSession={bestDistanceThisSession}
+        />
+      )}
+
+      {phase === 'summary' && sessionRounds.length > 0 && (
+        <RunSummaryOverlay
+          rounds={sessionRounds}
+          totalScore={sessionScore}
+          title={runMode === 'daily' ? `Daily Challenge · ${dailyKey ?? getDailyKey()}` : 'Sprint Complete'}
+          onPlayAgain={() => {
+            resetSession()
+            loadChallenge()
+          }}
+          onBackHome={() => navigate('/')}
         />
       )}
     </div>

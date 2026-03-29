@@ -1,27 +1,41 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen, LayoutDashboard, Volume2, VolumeX, Globe, ArrowRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import {
+  ArrowRight,
+  BookOpen,
+  Download,
+  Globe,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  MapPin,
+  Timer,
+  Trophy,
+  Volume2,
+  VolumeX,
+  WifiOff,
+} from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { AuthModal } from '@/components/auth/AuthModal'
+import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
+import { DifficultySelector } from '@/components/ui/DifficultySelector'
+import { OnboardingModal } from '@/components/ui/OnboardingModal'
+import { XPBar } from '@/components/ui/XPBar'
+import { useAuth } from '@/hooks/useAuth'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOffline } from '@/hooks/useOffline'
-import { useAuth } from '@/hooks/useAuth'
-import { AuthModal } from '@/components/auth/AuthModal'
-import { OnboardingModal } from '@/components/ui/OnboardingModal'
-import { DifficultySelector } from '@/components/ui/DifficultySelector'
-import { XPBar } from '@/components/ui/XPBar'
-import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
+import { getDailyKey } from '@/lib/daily'
 import { music } from '@/lib/music'
 import { fetchRandomPlace } from '@/lib/places'
-
-const ONBOARDING_KEY = 'atmospin_onboarded'
+import { useOnboardingStore } from '@/store/onboarding'
 
 const HOOKS = [
-  "The world is bigger than you think.",
-  "3,000+ places. How many can you find?",
-  "From Patagonia to Bhutan — dare to guess?",
-  "Every wrong answer teaches you something.",
-  "Geography you never knew you needed.",
-  "48% of people can't find Norway on a globe.",
+  'The world is bigger than you think.',
+  '3,000+ places. How many can you find?',
+  'From Patagonia to Bhutan, dare to guess?',
+  'Every wrong answer teaches you something.',
+  'Geography you never knew you needed.',
+  "Most people can't place half these landmarks.",
 ]
 
 export function HomeView() {
@@ -29,9 +43,9 @@ export function HomeView() {
   const { isInstallable, install } = useInstallPrompt()
   const isOffline = useOffline()
   const { isAuthenticated, user, signOut } = useAuth()
+  const homeIntroSeen = useOnboardingStore(s => s.homeIntroSeen)
+  const markHomeIntroSeen = useOnboardingStore(s => s.markHomeIntroSeen)
 
-  const isFirstVisit = !localStorage.getItem(ONBOARDING_KEY)
-  const [showSplash, setShowSplash] = useState(isFirstVisit)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
   const [muted, setMuted] = useState(() => music.isMuted)
@@ -44,42 +58,34 @@ export function HomeView() {
     if (!nowMuted) music.startTheme()
   }
 
-  function dismissSplash() {
-    localStorage.setItem(ONBOARDING_KEY, '1')
-    setShowSplash(false)
+  function goTo(path: string) {
+    markHomeIntroSeen()
+    music.stopTheme()
+    navigate(path)
   }
 
-  useEffect(() => { music.startTheme(); return () => music.stopTheme() }, [])
-
-  // Auto-dismiss splash after 4s
   useEffect(() => {
-    if (!showSplash) return
-    const id = setTimeout(dismissSplash, 4000)
-    return () => clearTimeout(id)
-  }, [showSplash])
+    music.startTheme()
+    return () => music.stopTheme()
+  }, [])
 
-  // Rotate hooks every 3.5s
   useEffect(() => {
     const id = setInterval(() => setHookIndex(i => (i + 1) % HOOKS.length), 3500)
     return () => clearInterval(id)
   }, [])
 
-  // Load a teaser challenge
   useEffect(() => {
     fetchRandomPlace().then(p => setTeaser({ prompt: p.prompt })).catch(() => null)
   }, [])
 
   return (
     <div className="h-full relative overflow-hidden">
-      {/* Auto-rotating globe background */}
       <div className="absolute inset-0 z-0 opacity-70">
         <GlobeCanvas interactive={false} autoRotate difficulty={4} />
       </div>
 
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-slate-950/60 via-slate-950/30 to-slate-950/80 pointer-events-none" />
+      <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.15),transparent_40%),linear-gradient(to_bottom,rgba(2,6,23,0.58),rgba(2,6,23,0.26),rgba(2,6,23,0.88))] pointer-events-none" />
 
-      {/* Music toggle */}
       <button
         onClick={toggleMusic}
         aria-label={muted ? 'Unmute music' : 'Mute music'}
@@ -88,64 +94,14 @@ export function HomeView() {
         {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
       </button>
 
-      {/* Offline banner */}
       {isOffline && (
         <div className="absolute top-4 left-4 right-16 z-20 bg-amber-900/60 border border-amber-700 rounded-lg px-3 py-2 flex items-center gap-2">
           <WifiOff className="w-4 h-4 text-amber-400" />
-          <span className="text-xs text-amber-200">Offline — playing with cached content</span>
+          <span className="text-xs text-amber-200">Offline, playing with cached content</span>
         </div>
       )}
 
-      {/* ── First-visit splash ─────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showSplash && (
-          <motion.div
-            key="splash"
-            className="absolute inset-0 z-40 flex flex-col items-center justify-center cursor-pointer"
-            onClick={dismissSplash}
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.9, ease: 'easeInOut' } }}
-          >
-            {/* Deep overlay so text pops */}
-            <div className="absolute inset-0 bg-slate-950/70" />
-
-            <div className="relative z-10 flex flex-col items-center gap-6 px-8 text-center">
-              {/* Staggered headline */}
-              <div className="space-y-1">
-                {['The world is', 'bigger than', 'you think.'].map((line, i) => (
-                  <motion.p
-                    key={line}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.25, duration: 0.6, ease: 'easeOut' }}
-                    className={`font-bold leading-tight tracking-tight text-white ${
-                      i === 2
-                        ? 'text-4xl drop-shadow-[0_0_30px_rgba(99,102,241,0.8)] text-indigo-200'
-                        : 'text-3xl text-slate-300'
-                    }`}
-                  >
-                    {line}
-                  </motion.p>
-                ))}
-              </div>
-
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.4, duration: 0.6 }}
-                className="text-sm text-slate-400"
-              >
-                Tap anywhere to explore →
-              </motion.p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Main UI ───────────────────────────────────────────────────────── */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center gap-4 p-6 overflow-y-auto">
-
-        {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,7 +114,6 @@ export function HomeView() {
           />
         </motion.div>
 
-        {/* Rotating hook tagline */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -185,13 +140,52 @@ export function HomeView() {
           transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
           className="flex flex-col items-center gap-4 w-full max-w-xs"
         >
-          {/* XP bar */}
+          {!homeIntroSeen && (
+            <div className="w-full rounded-3xl border border-indigo-600/40 bg-slate-950/65 backdrop-blur-md p-5 space-y-4 shadow-[0_0_32px_rgba(79,70,229,0.18)]">
+              <div className="space-y-2 text-center">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-indigo-300 font-semibold">Start Here</p>
+                <h1 className="text-2xl font-bold text-white leading-tight">Play one round and the game teaches itself.</h1>
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  Read a clue, spin the globe, place your pin, and see how close you were.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-2xl border border-slate-700/60 bg-slate-900/55 px-2 py-3">
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">1</p>
+                  <p className="text-xs font-semibold text-white mt-1">Read</p>
+                </div>
+                <div className="rounded-2xl border border-slate-700/60 bg-slate-900/55 px-2 py-3">
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">2</p>
+                  <p className="text-xs font-semibold text-white mt-1">Pin</p>
+                </div>
+                <div className="rounded-2xl border border-slate-700/60 bg-slate-900/55 px-2 py-3">
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">3</p>
+                  <p className="text-xs font-semibold text-white mt-1">Chase</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => goTo('/globe-spin?coach=1')}
+                className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 transition-colors"
+              >
+                Play Your First Round
+              </button>
+
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="w-full text-sm text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                See the full walkthrough
+              </button>
+            </div>
+          )}
+
           <XPBar />
 
-          {/* Mode cards */}
           <div className="grid grid-cols-2 gap-3 w-full">
             <button
-              onClick={() => { music.stopTheme(); navigate('/globe-spin') }}
+              onClick={() => goTo('/globe-spin')}
               className="flex flex-col items-center gap-2 bg-emerald-900/60 hover:bg-emerald-800/70 active:scale-95 border border-emerald-700/60 backdrop-blur-sm text-white font-bold py-5 px-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]"
             >
               <MapPin className="w-6 h-6 text-emerald-400" />
@@ -199,7 +193,7 @@ export function HomeView() {
               <span className="text-[10px] text-emerald-300/70 text-center leading-tight">Guess the location,<br />score points</span>
             </button>
             <button
-              onClick={() => { music.stopTheme(); navigate('/learn') }}
+              onClick={() => goTo('/learn')}
               className="flex flex-col items-center gap-2 bg-indigo-900/60 hover:bg-indigo-800/70 active:scale-95 border border-indigo-700/60 backdrop-blur-sm text-white font-bold py-5 px-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(99,102,241,0.2)]"
             >
               <Globe className="w-6 h-6 text-indigo-400" />
@@ -208,23 +202,51 @@ export function HomeView() {
             </button>
           </div>
 
-          {/* Social proof */}
-          <p className="text-[10px] text-slate-500 text-center">
-            🌍 3,000+ places across all 7 continents
-          </p>
+          <button
+            onClick={() => goTo('/globe-spin?mode=sprint')}
+            className="w-full flex items-center justify-between gap-3 rounded-2xl border border-indigo-600/50 bg-indigo-950/55 hover:bg-indigo-900/65 px-4 py-4 text-left text-white transition-colors shadow-[0_0_24px_rgba(79,70,229,0.18)]"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
+                <Timer className="w-5 h-5 text-indigo-300" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold">3-Round Sprint</p>
+                <p className="text-[11px] text-indigo-200/80">Fast run. Big finish. Better for one more go.</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-indigo-300 shrink-0" />
+          </button>
 
-          {/* Live challenge teaser */}
+          <button
+            onClick={() => goTo('/globe-spin?mode=daily')}
+            className="w-full flex items-center justify-between gap-3 rounded-2xl border border-amber-600/50 bg-amber-950/45 hover:bg-amber-900/55 px-4 py-4 text-left text-white transition-colors shadow-[0_0_24px_rgba(217,119,6,0.14)]"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
+                <Globe className="w-5 h-5 text-amber-200" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold">Daily Challenge</p>
+                <p className="text-[11px] text-amber-100/80">Same 3 places for everyone today · {getDailyKey()}</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-amber-200 shrink-0" />
+          </button>
+
+          <p className="text-[10px] text-slate-500 text-center">3,000+ places across all 7 continents</p>
+
           <AnimatePresence>
             {teaser && (
               <motion.button
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
-                onClick={() => { music.stopTheme(); navigate('/globe-spin') }}
+                onClick={() => goTo('/globe-spin')}
                 className="w-full text-left bg-slate-800/70 hover:bg-slate-700/70 border border-slate-600/50 backdrop-blur-sm rounded-xl p-4 group transition-colors"
               >
                 <p className="text-[10px] text-amber-400 font-semibold uppercase tracking-wide mb-1.5">
-                  🗺️ Can you find this place?
+                  Can you find this place?
                 </p>
                 <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
                   "{teaser.prompt}"
@@ -236,7 +258,6 @@ export function HomeView() {
             )}
           </AnimatePresence>
 
-          {/* Secondary buttons */}
           <div className="grid grid-cols-2 gap-2 w-full">
             <button
               onClick={() => navigate('/leaderboard')}
@@ -254,10 +275,8 @@ export function HomeView() {
             </button>
           </div>
 
-          {/* Difficulty */}
           <DifficultySelector />
 
-          {/* Tertiary links */}
           <div className="flex items-center gap-4 flex-wrap justify-center pt-1">
             <button
               onClick={() => setShowOnboarding(true)}

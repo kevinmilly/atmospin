@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, ArrowRight, Sparkles, Target, CircleX, Zap, Share2 } from 'lucide-react'
+import { ArrowRight, Compass, MapPin, Share2, Sparkles, Target, CircleX, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
-import type { SpinScoreResult, GeoChallenge } from '@/store/globeSpin'
+import type { GeoChallenge, SessionRoundSummary, SpinScoreResult } from '@/store/globeSpin'
 import type { GlobePoint } from '@/types'
 import { audio } from '@/lib/audio'
-import { reverseGeocode } from '@/lib/geo'
+import { estimateContinent, reverseGeocode } from '@/lib/geo'
 import { useAchievementsStore } from '@/store/achievements'
-import { useXpStore, calcXpGain, getLevelInfo } from '@/store/xp'
 import { useSettingsStore, DIFFICULTY_CONFIG } from '@/store/settings'
-import { estimateContinent } from '@/lib/geo'
+import { calcXpGain, getLevelInfo, useXpStore } from '@/store/xp'
+import { useMasteryStore } from '@/store/mastery'
 import { Confetti } from '@/components/ui/Confetti'
 import { shareResult } from '@/lib/shareCard'
 
@@ -19,23 +19,22 @@ interface SpinResultOverlayProps {
   sessionScore: number
   playerPin: GlobePoint | null
   onNextRound: () => void
+  onRedeemRegion: () => void
+  previousRound: SessionRoundSummary | null
+  bestDistanceThisSession: number | null
 }
 
 function getRating(score: number) {
-  // Score mapping reference (1000 * exp(-dist/1500)):
-  //  ~990 = 15km  ~936 = 100km  ~716 = 500km  ~513 = 1000km
-  //  ~368 = 1500km  ~264 = 2000km  ~135 = 3000km  ~36 = 5000km
-  if (score >= 920) return { label: 'Bullseye!',       color: 'text-emerald-400', bg: 'from-emerald-950/80 to-slate-900/95', icon: Target }
-  if (score >= 750) return { label: 'Nailed It!',      color: 'text-green-400',   bg: 'from-green-950/80 to-slate-900/95',   icon: Sparkles }
-  if (score >= 560) return { label: 'Great Shot!',     color: 'text-blue-400',    bg: 'from-blue-950/80 to-slate-900/95',    icon: Sparkles }
-  if (score >= 380) return { label: 'Not Bad!',        color: 'text-cyan-400',    bg: 'from-cyan-950/60 to-slate-900/95',    icon: MapPin }
-  if (score >= 220) return { label: 'Getting Warmer',  color: 'text-amber-400',   bg: 'from-amber-950/60 to-slate-900/95',   icon: MapPin }
-  if (score >= 100) return { label: 'Wrong Continent?',color: 'text-orange-400',  bg: 'from-orange-950/60 to-slate-900/95',  icon: CircleX }
-  if (score >= 30)  return { label: 'Way Off!',        color: 'text-red-400',     bg: 'from-red-950/60 to-slate-900/95',     icon: CircleX }
-  return               { label: 'Lost in Space!',  color: 'text-rose-400',    bg: 'from-rose-950/60 to-slate-900/95',    icon: CircleX }
+  if (score >= 920) return { label: 'Bullseye!', color: 'text-emerald-400', bg: 'from-emerald-950/80 to-slate-900/95', icon: Target }
+  if (score >= 750) return { label: 'Nailed It!', color: 'text-green-400', bg: 'from-green-950/80 to-slate-900/95', icon: Sparkles }
+  if (score >= 560) return { label: 'Great Shot!', color: 'text-blue-400', bg: 'from-blue-950/80 to-slate-900/95', icon: Sparkles }
+  if (score >= 380) return { label: 'Not Bad!', color: 'text-cyan-400', bg: 'from-cyan-950/60 to-slate-900/95', icon: MapPin }
+  if (score >= 220) return { label: 'Getting Warmer', color: 'text-amber-400', bg: 'from-amber-950/60 to-slate-900/95', icon: MapPin }
+  if (score >= 100) return { label: 'Wrong Continent?', color: 'text-orange-400', bg: 'from-orange-950/60 to-slate-900/95', icon: CircleX }
+  if (score >= 30) return { label: 'Way Off!', color: 'text-red-400', bg: 'from-red-950/60 to-slate-900/95', icon: CircleX }
+  return { label: 'Lost in Space!', color: 'text-rose-400', bg: 'from-rose-950/60 to-slate-900/95', icon: CircleX }
 }
 
-/** Animate a number from 0 to target over ~900ms */
 function useCountUp(target: number, delay = 200): number {
   const [value, setValue] = useState(0)
   const frameRef = useRef<number>(0)
@@ -45,10 +44,12 @@ function useCountUp(target: number, delay = 200): number {
     const duration = 900
 
     const tick = (now: number) => {
-      if (now < start) { frameRef.current = requestAnimationFrame(tick); return }
+      if (now < start) {
+        frameRef.current = requestAnimationFrame(tick)
+        return
+      }
       const elapsed = now - start
       const progress = Math.min(elapsed / duration, 1)
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3)
       setValue(Math.round(eased * target))
       if (progress < 1) frameRef.current = requestAnimationFrame(tick)
@@ -61,7 +62,30 @@ function useCountUp(target: number, delay = 200): number {
   return value
 }
 
-export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessionScore, playerPin, onNextRound }: SpinResultOverlayProps) {
+function getComparisonCopy(distanceKm: number, previousRound: SessionRoundSummary | null, bestDistanceThisSession: number | null, continent: string) {
+  if (previousRound && distanceKm < previousRound.distanceKm) {
+    return `Better than last round by ${(previousRound.distanceKm - distanceKm).toLocaleString()} km.`
+  }
+  if (bestDistanceThisSession !== null && distanceKm <= bestDistanceThisSession) {
+    return `New best in ${continent} this session.`
+  }
+  if (previousRound && distanceKm > previousRound.distanceKm) {
+    return `${(distanceKm - previousRound.distanceKm).toLocaleString()} km rougher than last round.`
+  }
+  return `Another shot in ${continent} could be the one.`
+}
+
+export function SpinResultOverlay({
+  scoreResult,
+  challenge,
+  roundsPlayed,
+  sessionScore,
+  playerPin,
+  onNextRound,
+  onRedeemRegion,
+  previousRound,
+  bestDistanceThisSession,
+}: SpinResultOverlayProps) {
   const rating = getRating(scoreResult.totalScore)
   const Icon = rating.icon
   const displayScore = useCountUp(scoreResult.totalScore)
@@ -72,6 +96,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
   const [shareState, setShareState] = useState<'idle' | 'shared' | 'copied'>('idle')
 
   const recordRound = useAchievementsStore(s => s.recordRound)
+  const recordMasteryRound = useMasteryStore(s => s.recordRound)
   const stats = useAchievementsStore(s => s.stats)
   const { addXp, recordPersonalBest } = useXpStore()
   const totalXp = useXpStore(s => s.totalXp)
@@ -79,6 +104,8 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
   const multiplier = DIFFICULTY_CONFIG[difficulty].multiplier
 
   const showConfetti = scoreResult.totalScore >= 850
+  const continent = challenge.continent ?? estimateContinent(challenge.lat, challenge.lng)
+  const comparisonCopy = getComparisonCopy(scoreResult.distanceKm, previousRound, bestDistanceThisSession, continent)
 
   async function handleShare() {
     const outcome = await shareResult({
@@ -115,6 +142,11 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
       playedAt: new Date().toISOString(),
       challengeName: challenge.name,
       playerPin: playerPin ?? null,
+    })
+    recordMasteryRound({
+      continent,
+      score: scoreResult.totalScore,
+      distanceKm: scoreResult.distanceKm,
     })
 
     const isPB = recordPersonalBest(challenge.id, scoreResult.distanceKm)
@@ -156,19 +188,16 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
       {showConfetti && <Confetti />}
 
       <div className={`bg-gradient-to-t ${rating.bg} border-t border-slate-700 rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-w-lg mx-auto space-y-4`}>
-        {/* Level up banner */}
         {leveledUp && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-gradient-to-r from-indigo-600/40 to-violet-600/40 border border-indigo-500/50 rounded-xl px-3 py-2 flex items-center justify-center gap-2"
           >
-            <span className="text-base">🎉</span>
-            <p className="text-sm font-bold text-indigo-200">Level Up! You're now a <span className="text-white">{leveledUp}</span></p>
+            <p className="text-sm font-bold text-indigo-200">Level Up! You are now a <span className="text-white">{leveledUp}</span></p>
           </motion.div>
         )}
 
-        {/* Rating + Score */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -180,7 +209,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
               <p className={`text-lg font-bold ${rating.color}`}>{rating.label}</p>
               <p className="text-xs text-slate-400">{scoreResult.distanceKm.toLocaleString()} km off</p>
               {isPersonalBest && (
-                <p className="text-[10px] text-amber-400 font-medium">🏆 New personal best!</p>
+                <p className="text-[10px] text-amber-400 font-medium">New personal best for this place.</p>
               )}
             </div>
           </div>
@@ -199,7 +228,10 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           </div>
         </div>
 
-        {/* Score bar */}
+        <div className="rounded-xl border border-slate-700/70 bg-slate-900/45 px-3 py-2">
+          <p className="text-xs font-medium text-indigo-200">{comparisonCopy}</p>
+        </div>
+
         <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
           <motion.div
             className={`h-full rounded-full ${
@@ -211,7 +243,6 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           />
         </div>
 
-        {/* Pin comparison */}
         <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
@@ -244,13 +275,12 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
                 transition={{ delay: 0.7 }}
                 className="text-sky-400"
               >
-                ⚡ Speed +{scoreResult.speedBonus} pts
+                Speed +{scoreResult.speedBonus} pts
               </motion.p>
             )}
           </div>
         )}
 
-        {/* XP gained */}
         {xpGained > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 4 }}
@@ -263,7 +293,6 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           </motion.div>
         )}
 
-        {/* Session + Share + Next */}
         <div className="flex items-center gap-2">
           <div className="text-xs text-slate-400 tabular-nums whitespace-nowrap shrink-0">
             Round {roundsPlayed} · {sessionScore} pts
@@ -275,12 +304,21 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           >
             {shareState === 'idle'
               ? <Share2 className="w-4 h-4" />
-              : <span className="text-[10px] font-bold text-emerald-400">{shareState === 'shared' ? 'Shared!' : 'Copied!'}</span>
-            }
+              : <span className="text-[10px] font-bold text-emerald-400">{shareState === 'shared' ? 'Shared!' : 'Copied!'}</span>}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={onRedeemRegion}
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-800/90 hover:bg-slate-700 text-slate-100 font-semibold py-3 transition-colors"
+          >
+            <Compass className="w-4 h-4" />
+            Redeem In {continent}
           </button>
           <button
             onClick={onNextRound}
-            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 text-white font-semibold py-3 rounded-xl transition-colors"
+            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 text-white font-semibold py-3 rounded-xl transition-colors"
           >
             Next Round
             <ArrowRight className="w-4 h-4" />

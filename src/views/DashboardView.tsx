@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trophy, Target, Zap, Globe, Clock, TrendingUp, Star } from 'lucide-react'
+import { ArrowLeft, Trophy, Target, Zap, Globe, Clock, TrendingUp, Star, Compass, Orbit } from 'lucide-react'
 import { useAchievementsStore, ALL_ACHIEVEMENTS } from '@/store/achievements'
 import type { Achievement } from '@/store/achievements'
 import { useXpStore, getLevelInfo } from '@/store/xp'
 import { motion } from 'framer-motion'
+import { getMasteryEntries, getMasteryLevel, useMasteryStore } from '@/store/mastery'
 
 const CATEGORY_LABELS: Record<Achievement['category'], string> = {
   accuracy: 'Accuracy',
@@ -67,15 +68,75 @@ function AchievementCard({ achievement, unlocked, unlockedDate }: { achievement:
   )
 }
 
+function MasteryCard({
+  continent,
+  roundsPlayed,
+  avgScore,
+  avgDistance,
+  bestScore,
+}: {
+  continent: string
+  roundsPlayed: number
+  avgScore: number
+  avgDistance: number
+  bestScore: number
+}) {
+  const level = getMasteryLevel(avgScore)
+
+  return (
+    <div className={`rounded-xl border border-slate-700/60 bg-gradient-to-br ${level.glow} p-3 space-y-2`}>
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold text-white">{continent}</p>
+          <p className={`text-[11px] font-semibold uppercase tracking-wide ${level.tone}`}>{level.label}</p>
+        </div>
+        <div className="w-10 h-10 rounded-xl bg-slate-900/50 border border-slate-700/60 flex items-center justify-center">
+          <Orbit className="w-4 h-4 text-slate-300" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-lg bg-slate-900/40 px-2 py-2">
+          <p className="text-[10px] text-slate-500 uppercase tracking-wide">Avg</p>
+          <p className="text-sm font-bold text-white tabular-nums">{avgScore}</p>
+        </div>
+        <div className="rounded-lg bg-slate-900/40 px-2 py-2">
+          <p className="text-[10px] text-slate-500 uppercase tracking-wide">Best</p>
+          <p className="text-sm font-bold text-white tabular-nums">{bestScore}</p>
+        </div>
+        <div className="rounded-lg bg-slate-900/40 px-2 py-2">
+          <p className="text-[10px] text-slate-500 uppercase tracking-wide">Km</p>
+          <p className="text-sm font-bold text-white tabular-nums">{avgDistance}</p>
+        </div>
+      </div>
+      <p className="text-[11px] text-slate-400">{roundsPlayed} round{roundsPlayed === 1 ? '' : 's'} logged</p>
+    </div>
+  )
+}
+
 export function DashboardView() {
   const navigate = useNavigate()
   const { stats, unlockedIds, unlockedDates } = useAchievementsStore()
   const unlockedSet = new Set(unlockedIds)
   const totalXp = useXpStore(s => s.totalXp)
+  const masteryContinents = useMasteryStore(s => s.continents)
   const { current, next, xpIntoLevel, xpForLevel, progress } = getLevelInfo(totalXp)
 
   const avg = stats.totalRounds > 0 ? Math.round(stats.totalScore / stats.totalRounds) : 0
   const unlockedCount = unlockedIds.length
+  const masteryEntries = getMasteryEntries(masteryContinents)
+  const playedMasteryEntries = masteryEntries.filter(entry => entry.roundsPlayed > 0)
+  const strongest = playedMasteryEntries.reduce((best, entry) => {
+    if (!best) return entry
+    const bestAvg = Math.round(best.totalScore / best.roundsPlayed)
+    const entryAvg = Math.round(entry.totalScore / entry.roundsPlayed)
+    return entryAvg > bestAvg ? entry : best
+  }, playedMasteryEntries[0] ?? null)
+  const weakest = playedMasteryEntries.reduce((worst, entry) => {
+    if (!worst) return entry
+    const worstAvg = Math.round(worst.totalScore / worst.roundsPlayed)
+    const entryAvg = Math.round(entry.totalScore / entry.roundsPlayed)
+    return entryAvg < worstAvg ? entry : worst
+  }, playedMasteryEntries[0] ?? null)
 
   return (
     <div className="h-full overflow-y-auto bg-slate-950">
@@ -131,6 +192,69 @@ export function DashboardView() {
             <StatCard label="Avg Score" value={avg.toLocaleString()} icon={Zap} sub="per round" />
             <StatCard label="Best Streak" value={stats.maxStreak} icon={Trophy} sub="rounds ≥700 pts" />
             <StatCard label="Expert Rounds" value={stats.expertRounds} icon={Clock} sub="no labels" />
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Regional Mastery</h2>
+            <div className="text-[11px] text-slate-500">{playedMasteryEntries.length}/7 active</div>
+          </div>
+
+          {(strongest || weakest) && (
+            <div className="grid grid-cols-1 gap-2">
+              {strongest && (
+                <div className="rounded-xl border border-emerald-700/30 bg-emerald-950/25 p-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center">
+                    <Compass className="w-4 h-4 text-emerald-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-emerald-300 font-semibold uppercase tracking-wide">Strongest Region</p>
+                    <p className="text-sm text-white font-semibold">{strongest.continent}</p>
+                  </div>
+                </div>
+              )}
+              {weakest && strongest?.continent !== weakest.continent && (
+                <div className="rounded-xl border border-amber-700/30 bg-amber-950/20 p-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-400/20 flex items-center justify-center">
+                    <Target className="w-4 h-4 text-amber-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-amber-300 font-semibold uppercase tracking-wide">Best Growth Bet</p>
+                    <p className="text-sm text-white font-semibold">{weakest.continent}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-2">
+            {masteryEntries.map(entry => {
+              if (entry.roundsPlayed === 0) {
+                return (
+                  <div key={entry.continent} className="rounded-xl border border-slate-800/70 bg-slate-900/35 p-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-300">{entry.continent}</p>
+                      <p className="text-[11px] text-slate-600">No mastery data yet</p>
+                    </div>
+                    <span className="text-[11px] text-slate-500 uppercase tracking-wide">Explore</span>
+                  </div>
+                )
+              }
+
+              const avgScore = Math.round(entry.totalScore / entry.roundsPlayed)
+              const avgDistance = Math.round(entry.totalDistanceKm / entry.roundsPlayed)
+              return (
+                <MasteryCard
+                  key={entry.continent}
+                  continent={entry.continent}
+                  roundsPlayed={entry.roundsPlayed}
+                  avgScore={avgScore}
+                  avgDistance={avgDistance}
+                  bestScore={entry.bestScore}
+                />
+              )
+            })}
           </div>
         </section>
 

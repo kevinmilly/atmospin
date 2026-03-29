@@ -6,6 +6,8 @@ export interface GeoChallenge {
   country: string
   lat: number
   lng: number
+  continent?: string
+  subregion?: string
   category: string
   difficulty: number
   prompt: string
@@ -18,13 +20,22 @@ export interface GeoChallenge {
   quiz_correct?: number
 }
 
-export type SpinPhase = 'loading' | 'prompt' | 'hunting' | 'submitted' | 'result'
+export type SpinPhase = 'loading' | 'prompt' | 'hunting' | 'submitted' | 'result' | 'summary'
+export type SpinRunMode = 'quick' | 'sprint' | 'daily'
 
 export interface SpinScoreResult {
   distanceKm: number
   distanceScore: number
   hintsUsed: number
   speedBonus: number
+  totalScore: number
+}
+
+export interface SessionRoundSummary {
+  challengeId: string
+  challengeName: string
+  continent: string
+  distanceKm: number
   totalScore: number
 }
 
@@ -38,6 +49,11 @@ export const TIMER_SECONDS: Record<1 | 2 | 3 | 4, number | null> = {
 interface GlobeSpinState {
   phase: SpinPhase
   setPhase: (p: SpinPhase) => void
+
+  runMode: SpinRunMode
+  maxRounds: number | null
+  dailyKey: string | null
+  configureRun: (mode: SpinRunMode) => void
 
   challenge: GeoChallenge | null
   setChallenge: (c: GeoChallenge | null) => void
@@ -54,7 +70,10 @@ interface GlobeSpinState {
   // Running totals for the session
   roundsPlayed: number
   sessionScore: number
-  addRoundScore: (score: number) => void
+  sessionRounds: SessionRoundSummary[]
+  addRoundResult: (round: SessionRoundSummary) => void
+  previousRound: SessionRoundSummary | null
+  bestDistanceThisSession: number | null
 
   // Timer
   timeRemaining: number | null
@@ -66,12 +85,22 @@ interface GlobeSpinState {
   pendingChallenge: GeoChallenge | null
   setPendingChallenge: (c: GeoChallenge | null) => void
 
+  resetSession: () => void
   reset: () => void
 }
 
 export const useGlobeSpinStore = create<GlobeSpinState>((set) => ({
   phase: 'loading',
   setPhase: (p) => set({ phase: p }),
+
+  runMode: 'quick',
+  maxRounds: null,
+  dailyKey: null,
+  configureRun: (mode) => set({
+    runMode: mode,
+    maxRounds: mode === 'quick' ? null : 3,
+    dailyKey: mode === 'daily' ? new Date().toLocaleDateString('en-CA') : null,
+  }),
 
   challenge: null,
   setChallenge: (c) => set({ challenge: c }),
@@ -89,9 +118,17 @@ export const useGlobeSpinStore = create<GlobeSpinState>((set) => ({
 
   roundsPlayed: 0,
   sessionScore: 0,
-  addRoundScore: (score) => set((s) => ({
+  sessionRounds: [],
+  previousRound: null,
+  bestDistanceThisSession: null,
+  addRoundResult: (round) => set((s) => ({
     roundsPlayed: s.roundsPlayed + 1,
-    sessionScore: s.sessionScore + score,
+    sessionScore: s.sessionScore + round.totalScore,
+    sessionRounds: [...s.sessionRounds, round],
+    previousRound: s.sessionRounds.at(-1) ?? null,
+    bestDistanceThisSession: s.bestDistanceThisSession === null
+      ? round.distanceKm
+      : Math.min(s.bestDistanceThisSession, round.distanceKm),
   })),
 
   timeRemaining: null,
@@ -103,6 +140,24 @@ export const useGlobeSpinStore = create<GlobeSpinState>((set) => ({
 
   pendingChallenge: null,
   setPendingChallenge: (c) => set({ pendingChallenge: c }),
+
+  resetSession: () => set((s) => ({
+    phase: 'loading',
+    challenge: null,
+    playerPin: null,
+    hintsRevealed: 0,
+    scoreResult: null,
+    roundsPlayed: 0,
+    sessionScore: 0,
+    sessionRounds: [],
+    previousRound: null,
+    bestDistanceThisSession: null,
+    timeRemaining: null,
+    pendingChallenge: null,
+    runMode: s.runMode,
+    maxRounds: s.maxRounds,
+    dailyKey: s.dailyKey,
+  })),
 
   reset: () => set({
     phase: 'loading',
