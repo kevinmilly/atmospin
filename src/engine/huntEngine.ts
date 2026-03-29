@@ -35,6 +35,12 @@ export function calcTotalScore(
   return Math.max(0, distanceScore + timeScore - hintPenalty)
 }
 
+/** Speed bonus for submitting early: up to +150 pts */
+export function calcSpeedBonus(timeRemaining: number, totalSeconds: number): number {
+  if (totalSeconds <= 0) return 0
+  return Math.round((timeRemaining / totalSeconds) * 150)
+}
+
 /** Full scoring calculation */
 export function calculateScore(
   playerPin: GlobePoint,

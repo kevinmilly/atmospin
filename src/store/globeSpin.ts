@@ -19,7 +19,15 @@ export interface SpinScoreResult {
   distanceKm: number
   distanceScore: number
   hintsUsed: number
+  speedBonus: number
   totalScore: number
+}
+
+export const TIMER_SECONDS: Record<1 | 2 | 3 | 4, number | null> = {
+  1: null,
+  2: 90,
+  3: 60,
+  4: 45,
 }
 
 interface GlobeSpinState {
@@ -42,6 +50,12 @@ interface GlobeSpinState {
   roundsPlayed: number
   sessionScore: number
   addRoundScore: (score: number) => void
+
+  // Timer
+  timeRemaining: number | null
+  startTimer: (seconds: number) => void
+  tickTimer: () => void
+  stopTimer: () => void
 
   reset: () => void
 }
@@ -71,11 +85,19 @@ export const useGlobeSpinStore = create<GlobeSpinState>((set) => ({
     sessionScore: s.sessionScore + score,
   })),
 
+  timeRemaining: null,
+  startTimer: (seconds) => set({ timeRemaining: seconds }),
+  tickTimer: () => set((s) => ({
+    timeRemaining: s.timeRemaining !== null ? Math.max(0, s.timeRemaining - 1) : null,
+  })),
+  stopTimer: () => set({ timeRemaining: null }),
+
   reset: () => set({
     phase: 'loading',
     challenge: null,
     playerPin: null,
     hintsRevealed: 0,
     scoreResult: null,
+    timeRemaining: null,
   }),
 }))

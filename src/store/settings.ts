@@ -18,7 +18,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      difficulty: 4,
+      difficulty: 1,
       setDifficulty: (d) => set({ difficulty: d }),
     }),
     { name: 'atmospin-settings' },

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, ArrowRight, Sparkles, Target, CircleX, Zap } from 'lucide-react'
+import { MapPin, ArrowRight, Sparkles, Target, CircleX, Zap, Share2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { SpinScoreResult, GeoChallenge } from '@/store/globeSpin'
 import type { GlobePoint } from '@/types'
@@ -10,6 +10,7 @@ import { useXpStore, calcXpGain, getLevelInfo } from '@/store/xp'
 import { useSettingsStore, DIFFICULTY_CONFIG } from '@/store/settings'
 import { estimateContinent } from '@/lib/geo'
 import { Confetti } from '@/components/ui/Confetti'
+import { shareResult } from '@/lib/shareCard'
 
 interface SpinResultOverlayProps {
   scoreResult: SpinScoreResult
@@ -63,6 +64,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
   const [xpGained, setXpGained] = useState(0)
   const [isPersonalBest, setIsPersonalBest] = useState(false)
   const [leveledUp, setLeveledUp] = useState<string | null>(null)
+  const [shareState, setShareState] = useState<'idle' | 'shared' | 'copied'>('idle')
 
   const recordRound = useAchievementsStore(s => s.recordRound)
   const stats = useAchievementsStore(s => s.stats)
@@ -72,6 +74,26 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
   const multiplier = DIFFICULTY_CONFIG[difficulty].multiplier
 
   const showConfetti = scoreResult.totalScore >= 850
+
+  async function handleShare() {
+    const outcome = await shareResult({
+      challengeName: challenge.name,
+      country: challenge.country,
+      totalScore: scoreResult.totalScore,
+      distanceKm: scoreResult.distanceKm,
+      difficulty,
+      hintsUsed: scoreResult.hintsUsed,
+      xpGained,
+      isPersonalBest,
+      speedBonus: scoreResult.speedBonus,
+      roundsPlayed,
+      sessionScore,
+    })
+    if (outcome === 'shared' || outcome === 'copied') {
+      setShareState(outcome)
+      setTimeout(() => setShareState('idle'), 2000)
+    }
+  }
 
   useEffect(() => {
     if (scoreResult.totalScore >= 500) audio.success()
@@ -84,6 +106,7 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
       difficulty,
       distanceKm: scoreResult.distanceKm,
       hintsUsed: scoreResult.hintsUsed,
+      speedBonus: scoreResult.speedBonus,
       playedAt: new Date().toISOString(),
       challengeName: challenge.name,
       playerPin: playerPin ?? null,
@@ -202,10 +225,24 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           )}
         </div>
 
-        {scoreResult.hintsUsed > 0 && (
-          <p className="text-xs text-amber-400 text-center">
-            {scoreResult.hintsUsed} hint{scoreResult.hintsUsed > 1 ? 's' : ''} used (-{scoreResult.hintsUsed * 100} pts)
-          </p>
+        {(scoreResult.hintsUsed > 0 || scoreResult.speedBonus > 0) && (
+          <div className="flex items-center justify-center gap-3 text-xs">
+            {scoreResult.hintsUsed > 0 && (
+              <p className="text-amber-400">
+                {scoreResult.hintsUsed} hint{scoreResult.hintsUsed > 1 ? 's' : ''} (-{scoreResult.hintsUsed * 100} pts)
+              </p>
+            )}
+            {scoreResult.speedBonus > 0 && (
+              <motion.p
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.7 }}
+                className="text-sky-400"
+              >
+                ⚡ Speed +{scoreResult.speedBonus} pts
+              </motion.p>
+            )}
+          </div>
         )}
 
         {/* XP gained */}
@@ -221,11 +258,21 @@ export function SpinResultOverlay({ scoreResult, challenge, roundsPlayed, sessio
           </motion.div>
         )}
 
-        {/* Session + Next */}
-        <div className="flex items-center gap-3">
-          <div className="text-xs text-slate-400 tabular-nums whitespace-nowrap">
+        {/* Session + Share + Next */}
+        <div className="flex items-center gap-2">
+          <div className="text-xs text-slate-400 tabular-nums whitespace-nowrap shrink-0">
             Round {roundsPlayed} · {sessionScore} pts
           </div>
+          <button
+            onClick={handleShare}
+            aria-label="Share result"
+            className="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl bg-slate-800 border border-slate-600 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+          >
+            {shareState === 'idle'
+              ? <Share2 className="w-4 h-4" />
+              : <span className="text-[10px] font-bold text-emerald-400">{shareState === 'shared' ? 'Shared!' : 'Copied!'}</span>
+            }
+          </button>
           <button
             onClick={onNextRound}
             className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400 text-white font-semibold py-3 rounded-xl transition-colors"

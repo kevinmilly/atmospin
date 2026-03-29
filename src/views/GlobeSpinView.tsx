@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Globe, Star, ChevronDown, Grip, Flame } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -7,8 +7,10 @@ import { music } from '@/lib/music'
 import { HintDrawer } from '@/components/hunt/HintDrawer'
 import { SubmitButton } from '@/components/hunt/SubmitButton'
 import { SpinResultOverlay } from '@/components/hunt/SpinResultOverlay'
+import { TimerPill } from '@/components/hunt/TimerPill'
 import { useGlobeSpin } from '@/hooks/useGlobeSpin'
 import { useSettingsStore } from '@/store/settings'
+import { useGlobeSpinStore, TIMER_SECONDS } from '@/store/globeSpin'
 import { useAchievementsStore } from '@/store/achievements'
 import { getStreakLabel, getStreakMultiplier } from '@/store/xp'
 
@@ -23,9 +25,14 @@ export function GlobeSpinView() {
   const {
     phase, challenge, playerPin, hintsRevealed,
     scoreResult, roundsPlayed, sessionScore,
+    timeRemaining,
     loadChallenge, startHunting, placePin,
     submitAnswer, useHint,
   } = useGlobeSpin()
+
+  const { startTimer, tickTimer } = useGlobeSpinStore()
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const totalSeconds = TIMER_SECONDS[difficulty] ?? 0
 
   useEffect(() => {
     loadChallenge()
@@ -40,6 +47,25 @@ export function GlobeSpinView() {
     if (phase === 'result') music.stopGame()
     if (phase === 'hunting') music.startGame()
   }, [phase])
+
+  // Timer loop — only for difficulty > 1
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    if (phase === 'hunting' && totalSeconds > 0) {
+      startTimer(totalSeconds)
+      timerRef.current = setInterval(tickTimer, 1000)
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-submit when timer reaches 0
+  useEffect(() => {
+    if (timeRemaining === 0 && phase === 'hunting') {
+      submitAnswer()
+    }
+  }, [timeRemaining, phase, submitAnswer])
 
   const correctPoint = useMemo(() => {
     if ((phase === 'result' || phase === 'submitted') && challenge) {
@@ -167,6 +193,7 @@ export function GlobeSpinView() {
               {panelOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <Grip className="w-3.5 h-3.5" />}
               <span>Hints</span>
             </button>
+            <TimerPill timeRemaining={timeRemaining} totalSeconds={totalSeconds} />
             <div className="flex-1">
               <SubmitButton playerPin={playerPin} onSubmit={submitAnswer} />
             </div>

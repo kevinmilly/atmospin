@@ -354,9 +354,9 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           labelLat="lat"
           labelLng="lng"
           labelText="text"
-          labelSize={zoomTier >= 3 ? 0.35 : 0.65}
-          labelColor={() => zoomTier >= 3 ? 'rgba(226,232,240,0.80)' : 'rgba(226,232,240,0.90)'}
-          labelResolution={1}
+          labelSize={zoomTier >= 3 ? 0.55 : 0.80}
+          labelColor={() => 'rgba(226,232,240,0.95)'}
+          labelResolution={2}
           labelAltitude={0.01}
           // Accuracy ripple rings at correct answer location
           ringsData={correctPoint ? [correctPoint] : []}

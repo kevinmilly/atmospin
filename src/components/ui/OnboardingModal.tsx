@@ -24,8 +24,8 @@ const SLIDES = [
     icon: Lightbulb,
     color: 'text-amber-400',
     bg: 'bg-amber-500/10',
-    title: 'Hints & Hunt',
-    body: 'Stuck? Reveal hints for extra help — but each hint costs 100 points. In Hunt mode you also guess the year the event took place.',
+    title: 'Hints & Scoring',
+    body: 'Stuck? Reveal hints for extra help — but each hint costs 100 points. The closer your pin to the real location, the higher your score.',
   },
   {
     icon: Trophy,

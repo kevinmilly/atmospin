@@ -21,6 +21,7 @@ export interface RoundRecord {
   difficulty: number
   distanceKm: number
   hintsUsed: number
+  speedBonus?: number
   playedAt: string
   challengeName: string
   playerPin: { lat: number; lng: number } | null
@@ -82,6 +83,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
   { id: 'night_owl', name: 'Night Owl', description: 'Play between midnight and 4 AM.', icon: '🦉', category: 'misc' },
   { id: 'globeaholic', name: 'Globeaholic', description: 'Play 100 total rounds.', icon: '🌎', category: 'misc', progressTarget: 100 },
   { id: 'close_but', name: 'Brutal Guess', description: 'Score below 10 points on a round.', icon: '😬', category: 'misc' },
+  { id: 'speed_demon', name: 'Speed Demon', description: 'Submit with 30+ seconds remaining on Expert difficulty.', icon: '⚡', category: 'misc' },
 ]
 
 // ─── Check logic ──────────────────────────────────────────────────────────────
@@ -134,6 +136,8 @@ function checkConditions(stats: AchievementStats, round: RoundRecord, alreadyUnl
   if (hour >= 0 && hour < 4) tryUnlock('night_owl')
   if (stats.totalRounds >= 100) tryUnlock('globeaholic')
   if (round.score < 10) tryUnlock('close_but')
+  // Speed Demon: submitted with 30+ sec left on Expert (speedBonus at 30s = 30/45*150 ≈ 100 pts)
+  if (round.difficulty === 4 && (round.speedBonus ?? 0) >= 100) tryUnlock('speed_demon')
 
   return newly
 }
