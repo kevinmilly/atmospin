@@ -16,6 +16,9 @@ export interface GeoChallenge {
   quiz_question?: string
   quiz_answers?: string[]
   quiz_correct?: number
+  // Contextual clues
+  climate?: string
+  region_context?: string
 }
 
 export type SpinPhase = 'loading' | 'prompt' | 'hunting' | 'submitted' | 'result'
@@ -62,6 +65,10 @@ interface GlobeSpinState {
   tickTimer: () => void
   stopTimer: () => void
 
+  // Prefetched next challenge (eliminates round-transition lag)
+  pendingChallenge: GeoChallenge | null
+  setPendingChallenge: (c: GeoChallenge | null) => void
+
   reset: () => void
 }
 
@@ -96,6 +103,9 @@ export const useGlobeSpinStore = create<GlobeSpinState>((set) => ({
     timeRemaining: s.timeRemaining !== null ? Math.max(0, s.timeRemaining - 1) : null,
   })),
   stopTimer: () => set({ timeRemaining: null }),
+
+  pendingChallenge: null,
+  setPendingChallenge: (c) => set({ pendingChallenge: c }),
 
   reset: () => set({
     phase: 'loading',

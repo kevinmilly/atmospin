@@ -151,6 +151,37 @@ export function GlobeSpinView() {
               <span className="text-sm font-medium text-emerald-400">Globe Spin</span>
             </div>
             <p className="text-lg text-white leading-relaxed">{challenge.prompt}</p>
+
+            {/* Ambient contextual clue pills — free hints to orient the player */}
+            <div className="flex flex-wrap gap-1.5">
+              {/* Hemisphere — derived from lat, always available */}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-900/60 border border-sky-700/60 text-sky-300 text-xs">
+                {challenge.lat >= 0 ? '🌍 Northern Hemisphere' : '🌏 Southern Hemisphere'}
+              </span>
+              {/* Continent — first hint, always present */}
+              {challenge.hints?.[0] && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-900/60 border border-violet-700/60 text-violet-300 text-xs">
+                  📍 {challenge.hints[0]}
+                </span>
+              )}
+              {/* Category badge */}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs capitalize">
+                {challenge.category === 'heritage' ? '🏛' : challenge.category === 'nature' ? '🌿' : '🗺'} {challenge.category}
+              </span>
+              {/* Climate — if enriched */}
+              {challenge.climate && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-900/60 border border-teal-700/60 text-teal-300 text-xs">
+                  🌡 {challenge.climate}
+                </span>
+              )}
+              {/* Regional context — if enriched */}
+              {challenge.region_context && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-900/60 border border-amber-700/60 text-amber-300 text-xs">
+                  🧭 {challenge.region_context}
+                </span>
+              )}
+            </div>
+
             <div className="flex items-center gap-1.5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className={`w-4 h-4 ${i < challenge.difficulty ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`} />
