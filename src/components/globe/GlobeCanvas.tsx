@@ -189,23 +189,21 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
     return () => observer.disconnect()
   }, [])
 
-  // Track camera changes to update zoom tier
-  useEffect(() => {
+  // Set up camera change listener once the globe is ready (not on mount — controls may not exist yet)
+  const handleGlobeReady = useCallback(() => {
     const globe = globeRef.current
     if (!globe) return
-
     const controls = globe.controls()
     if (!controls) return
 
     const handleChange = () => {
       const pov = globe.pointOfView()
-      if (pov) {
-        setViewpoint({ lat: pov.lat, lng: pov.lng, altitude: pov.altitude })
-      }
+      if (pov) setViewpoint({ lat: pov.lat, lng: pov.lng, altitude: pov.altitude ?? 2.5 })
     }
 
+    // Seed the initial zoom tier immediately
+    handleChange()
     controls.addEventListener('change', handleChange)
-    return () => controls.removeEventListener('change', handleChange)
   }, [setViewpoint])
 
   // Fly camera to focusPoint when it changes
@@ -360,6 +358,7 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           arcsTransitionDuration={500}
           animateIn={true}
           waitForGlobeReady={true}
+          onGlobeReady={handleGlobeReady}
           // Labels: continent labels for everyone at medium zoom, country/region labels at close zoom.
           // Difficulty only determines whether country-level labels show (Easy/Medium) or just regions.
           labelsData={
@@ -374,7 +373,6 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           labelText="text"
           labelSize={zoomTier >= 3 ? 0.6 : 1.4}
           labelColor={() => 'rgba(226,232,240,0.95)'}
-          labelBackgroundColor={() => 'rgba(0,0,0,0.35)'}
           labelResolution={3}
           labelDotRadius={0}
           labelAltitude={0.02}
