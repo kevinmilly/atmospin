@@ -1,0 +1,137 @@
+[
+  {
+    "id": "wd_Q370956",
+    "name": "City of Vicenza and the Palladian Villas of the Veneto",
+    "country": "Italy",
+    "lat": 45.55,
+    "lng": 11.55,
+    "category": "heritage",
+    "wikidataId": "Q370956"
+  },
+  {
+    "id": "wd_Q330095",
+    "name": "Vredefort crater",
+    "country": "South Africa",
+    "lat": -26.816666666667,
+    "lng": 27.416666666667,
+    "category": "heritage",
+    "wikidataId": "Q330095"
+  },
+  {
+    "id": "wd_Q375634",
+    "name": "Sinharaja Forest Reserve",
+    "country": "Sri Lanka",
+    "lat": 6.24,
+    "lng": 80.28,
+    "category": "heritage",
+    "wikidataId": "Q375634"
+  },
+  {
+    "id": "wd_Q457453",
+    "name": "Villa Tugendhat",
+    "country": "Czech Republic",
+    "lat": 49.207222222222,
+    "lng": 16.615833333333,
+    "category": "heritage",
+    "wikidataId": "Q457453"
+  },
+  {
+    "id": "wd_Q311341",
+    "name": "Al-Ahsa Oasis",
+    "country": "Saudi Arabia",
+    "lat": 25.429444,
+    "lng": 49.621944,
+    "category": "heritage",
+    "wikidataId": "Q311341"
+  },
+  {
+    "id": "wd_Q129296",
+    "name": "Santorini",
+    "country": "Greece",
+    "lat": 36.415,
+    "lng": 25.4325,
+    "category": "nature",
+    "wikidataId": "Q129296"
+  },
+  {
+    "id": "wd_Q129557",
+    "name": "Tranøya",
+    "country": "Norway",
+    "lat": 69.1447,
+    "lng": 17.43,
+    "category": "nature",
+    "wikidataId": "Q129557"
+  },
+  {
+    "id": "wd_Q138030",
+    "name": "Kuiu Island",
+    "country": "United States",
+    "lat": 56.540555555556,
+    "lng": -134.05111111111,
+    "category": "nature",
+    "wikidataId": "Q138030"
+  },
+  {
+    "id": "wd_Q118647",
+    "name": "Kitava",
+    "country": "Papua New Guinea",
+    "lat": -8.62222222,
+    "lng": 151.33444444,
+    "category": "nature",
+    "wikidataId": "Q118647"
+  },
+  {
+    "id": "wd_Q79160",
+    "name": "Kisimul Castle",
+    "country": "United Kingdom",
+    "lat": 56.952,
+    "lng": -7.487,
+    "category": "nature",
+    "wikidataId": "Q79160"
+  },
+  {
+    "id": "wd_Q828155",
+    "name": "Krka National Park",
+    "country": "Croatia",
+    "lat": 43.858888888889,
+    "lng": 15.976111111111,
+    "category": "nature",
+    "wikidataId": "Q828155"
+  },
+  {
+    "id": "wd_Q862260",
+    "name": "Kouchibouguac National Park",
+    "country": "Canada",
+    "lat": 46.8497,
+    "lng": -64.9669,
+    "category": "nature",
+    "wikidataId": "Q862260"
+  },
+  {
+    "id": "wd_Q829012",
+    "name": "Los Arrayanes National Park",
+    "country": "Argentina",
+    "lat": -40.83333333,
+    "lng": -71.61666667,
+    "category": "nature",
+    "wikidataId": "Q829012"
+  },
+  {
+    "id": "wd_Q819281",
+    "name": "Mount Arbel",
+    "country": "Israel",
+    "lat": 32.824,
+    "lng": 35.507,
+    "category": "nature",
+    "wikidataId": "Q819281"
+  },
+  {
+    "id": "wd_Q829305",
+    "name": "Sierra de las Quijadas National Park",
+    "country": "Argentina",
+    "lat": -32.55083333,
+    "lng": -67.06416667,
+    "category": "nature",
+    "wikidataId": "Q829305"
+  }
+]

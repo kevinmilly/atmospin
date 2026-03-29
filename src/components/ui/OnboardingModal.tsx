@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Globe, MapPin, Lightbulb, Trophy, X, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Globe, MapPin, Lightbulb, Trophy, X, ChevronRight, ChevronLeft, BookOpen } from 'lucide-react'
 
 interface OnboardingModalProps {
   onClose: () => void
@@ -11,7 +11,14 @@ const SLIDES = [
     color: 'text-indigo-400',
     bg: 'bg-indigo-500/10',
     title: 'Welcome to Atmospin',
-    body: 'Two geography games in one. Test your knowledge of places across the globe — spin, guess, and score points based on how close you get.',
+    body: 'Two ways to explore the world. Build your geography knowledge from scratch in Learn Mode, or put it to the test in Globe Spin.',
+  },
+  {
+    icon: BookOpen,
+    color: 'text-indigo-400',
+    bg: 'bg-indigo-500/10',
+    title: 'New to Geography? Start Here',
+    body: 'Learn Mode spins the globe to a random place and shares a weird-but-true fact about it. Answer a quick quiz to earn XP — no pressure, just discovery.',
   },
   {
     icon: MapPin,
@@ -25,7 +32,7 @@ const SLIDES = [
     color: 'text-amber-400',
     bg: 'bg-amber-500/10',
     title: 'Hints & Scoring',
-    body: 'Stuck? Reveal hints for extra help — but each hint costs 100 points. The closer your pin to the real location, the higher your score.',
+    body: 'Stuck? Reveal hints for extra help — but each hint costs 100 points. On harder difficulties, a countdown timer adds extra pressure (and a speed bonus!).',
   },
   {
     icon: Trophy,

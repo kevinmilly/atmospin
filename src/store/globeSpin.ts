@@ -11,6 +11,11 @@ export interface GeoChallenge {
   prompt: string
   hints: string[]
   fun_fact: string
+  // Learn Mode (populated when drawn from Supabase)
+  learn_fact?: string
+  quiz_question?: string
+  quiz_answers?: string[]
+  quiz_correct?: number
 }
 
 export type SpinPhase = 'loading' | 'prompt' | 'hunting' | 'submitted' | 'result'

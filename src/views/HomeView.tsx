@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen, LayoutDashboard, Volume2, VolumeX } from 'lucide-react'
+import { Trophy, MapPin, Download, LogIn, LogOut, WifiOff, BookOpen, LayoutDashboard, Volume2, VolumeX, Globe } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOffline } from '@/hooks/useOffline'
@@ -91,14 +91,25 @@ export function HomeView() {
           {/* XP bar */}
           <XPBar />
 
-          {/* Primary Play button */}
-          <button
-            onClick={() => { music.stopTheme(); navigate('/globe-spin') }}
-            className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 focus-visible:ring-2 focus-visible:ring-emerald-400 text-white font-bold text-lg py-4 px-6 rounded-2xl transition-all shadow-[0_0_24px_rgba(16,185,129,0.35)]"
-          >
-            <MapPin className="w-5 h-5" />
-            Play
-          </button>
+          {/* Mode cards */}
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <button
+              onClick={() => { music.stopTheme(); navigate('/globe-spin') }}
+              className="flex flex-col items-center gap-2 bg-emerald-900/60 hover:bg-emerald-800/70 active:scale-95 border border-emerald-700/60 backdrop-blur-sm text-white font-bold py-5 px-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+            >
+              <MapPin className="w-6 h-6 text-emerald-400" />
+              <span className="text-sm font-bold">Globe Spin</span>
+              <span className="text-[10px] text-emerald-300/70 text-center leading-tight">Guess the location,<br/>score points</span>
+            </button>
+            <button
+              onClick={() => { music.stopTheme(); navigate('/learn') }}
+              className="flex flex-col items-center gap-2 bg-indigo-900/60 hover:bg-indigo-800/70 active:scale-95 border border-indigo-700/60 backdrop-blur-sm text-white font-bold py-5 px-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+            >
+              <Globe className="w-6 h-6 text-indigo-400" />
+              <span className="text-sm font-bold">Learn</span>
+              <span className="text-[10px] text-indigo-300/70 text-center leading-tight">Discover places,<br/>earn XP</span>
+            </button>
+          </div>
 
           {/* Secondary buttons */}
           <div className="grid grid-cols-2 gap-2 w-full">

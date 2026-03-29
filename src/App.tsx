@@ -9,6 +9,7 @@ const HomeView = lazy(() => import('@/views/HomeView').then(m => ({ default: m.H
 const GlobeSpinView = lazy(() => import('@/views/GlobeSpinView').then(m => ({ default: m.GlobeSpinView })))
 const LeaderboardView = lazy(() => import('@/views/LeaderboardView').then(m => ({ default: m.LeaderboardView })))
 const DashboardView = lazy(() => import('@/views/DashboardView').then(m => ({ default: m.DashboardView })))
+const LearnModeView = lazy(() => import('@/views/LearnModeView').then(m => ({ default: m.LearnModeView })))
 
 function ScreenLoader() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
               <Route path="/globe-spin" element={<GlobeSpinView />} />
               <Route path="/leaderboard" element={<LeaderboardView />} />
               <Route path="/dashboard" element={<DashboardView />} />
+              <Route path="/learn" element={<LearnModeView />} />
             </Routes>
           </Suspense>
         </div>

@@ -7,10 +7,8 @@ import { useSettingsStore, DIFFICULTY_CONFIG } from '@/store/settings'
 import { TIMER_SECONDS } from '@/store/globeSpin'
 import { useAchievementsStore } from '@/store/achievements'
 import { getStreakMultiplier } from '@/store/xp'
-import geoPlaces from '@/data/geo-places.json'
+import { fetchRandomPlace } from '@/lib/places'
 import type { GlobePoint } from '@/types'
-
-let lastIndex = -1
 
 export function useGlobeSpin() {
   const {
@@ -30,17 +28,15 @@ export function useGlobeSpin() {
   const currentStreak = useAchievementsStore(s => s.stats.currentStreak)
   const streakMultiplier = getStreakMultiplier(currentStreak)
 
-  const loadChallenge = useCallback(() => {
+  const loadChallenge = useCallback(async () => {
     reset()
     setGlobePin(null)
-
-    let idx: number
-    do {
-      idx = Math.floor(Math.random() * geoPlaces.length)
-    } while (idx === lastIndex && geoPlaces.length > 1)
-    lastIndex = idx
-
-    setChallenge(geoPlaces[idx])
+    try {
+      const place = await fetchRandomPlace()
+      setChallenge(place)
+    } catch {
+      // fetchRandomPlace has its own fallback; this should never throw
+    }
     setPhase('prompt')
   }, [reset, setGlobePin, setChallenge, setPhase])
 

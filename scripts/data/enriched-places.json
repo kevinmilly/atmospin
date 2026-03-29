@@ -1,0 +1,127 @@
+[
+  {
+    "id": "wd_Q370956",
+    "name": "City of Vicenza and the Palladian Villas of the Veneto",
+    "country": "Italy",
+    "lat": 45.55,
+    "lng": 11.55,
+    "category": "heritage",
+    "difficulty": 2,
+    "prompt": "This Renaissance city in northeastern Italy is famous for its harmonious architecture inspired by ancient Roman principles, featuring distinctive columned villas designed by a legendary architect.",
+    "hints": [
+      "Southern Europe",
+      "Veneto region of Italy",
+      "Province of Vicenza, known for neoclassical villas and palaces"
+    ],
+    "fun_fact": "The city's UNESCO World Heritage designation includes not just the urban center but also 24 surrounding Palladian villas that dot the countryside like architectural jewels.",
+    "learn_fact": "Andrea Palladio, the Renaissance architect who revolutionized European design, actually published a detailed treatise called 'I Quattro Libri dell'Architettura' (The Four Books of Architecture) in 1570 that became the architectural bible for centuries. His mathematical proportions and classical symmetry were so influential that an entire architectural style—Palladianism—was named after him and spread across Europe and America.",
+    "quiz_question": "What was the name of Andrea Palladio's influential architectural treatise published in 1570?",
+    "quiz_answers": [
+      "I Quattro Libri dell'Architettura",
+      "De Architectura Romana",
+      "Principia Architectonica",
+      "Villa e Palazzo Italiano"
+    ],
+    "quiz_correct": 0
+  },
+  {
+    "id": "wd_Q330095",
+    "name": "Vredefort crater",
+    "country": "South Africa",
+    "lat": -26.816666666667,
+    "lng": 27.416666666667,
+    "category": "heritage",
+    "difficulty": 2,
+    "prompt": "This ancient impact site in southern Africa is the oldest and largest verified meteorite crater on Earth.",
+    "hints": [
+      "Southern Africa",
+      "South Africa, Free State Province",
+      "Near the town of Vredefort, about 120km southwest of Johannesburg"
+    ],
+    "fun_fact": "The crater is so old that erosion has exposed its deep underground structure, making it a natural window into the planet's crust.",
+    "learn_fact": "The Vredefort crater was created 2.02 billion years ago by a meteorite estimated to be 10-15 kilometers wide, and the impact was so powerful it vaporized the asteroid completely. The resulting crater originally measured over 300 kilometers across, making it roughly the size of modern-day South Africa.",
+    "quiz_question": "Approximately how wide was the original Vredefort crater impact zone?",
+    "quiz_answers": [
+      "Over 300 kilometers across",
+      "About 50 kilometers across",
+      "Roughly 100 kilometers across",
+      "Nearly 500 kilometers across"
+    ],
+    "quiz_correct": 0
+  },
+  {
+    "id": "wd_Q375634",
+    "name": "Sinharaja Forest Reserve",
+    "country": "Sri Lanka",
+    "lat": 6.24,
+    "lng": 80.28,
+    "category": "heritage",
+    "difficulty": 2,
+    "prompt": "This UNESCO World Heritage rainforest in South Asia is one of the oldest and most biodiverse tropical forests, home to endemic species found nowhere else on Earth.",
+    "hints": [
+      "South Asia",
+      "Island nation in the Indian Ocean",
+      "Southwestern region, near the town of Deniyaya"
+    ],
+    "fun_fact": "The forest is home to the Sri Lankan red-faced malkoha, a bird species that exists nowhere else in the world except this reserve.",
+    "learn_fact": "Sinharaja Forest Reserve covers only 8,864 hectares but contains over 2,200 species of flowering plants and 66% of Sri Lanka's endemic bird species. Despite its small size, it rivals much larger rainforests in biodiversity density and is considered a living museum of rainforest evolution dating back millions of years.",
+    "quiz_question": "What percentage of Sri Lanka's endemic bird species are found in Sinharaja Forest Reserve?",
+    "quiz_answers": [
+      "66%",
+      "45%",
+      "82%",
+      "51%"
+    ],
+    "quiz_correct": 0
+  },
+  {
+    "id": "wd_Q457453",
+    "name": "Villa Tugendhat",
+    "country": "Czech Republic",
+    "lat": 49.207222222222,
+    "lng": 16.615833333333,
+    "category": "heritage",
+    "difficulty": 3,
+    "prompt": "This modernist masterpiece built in the 1930s in a Czech city features a revolutionary open floor plan and floor-to-ceiling glass walls that dissolve the boundary between interior and exterior.",
+    "hints": [
+      "Central Europe",
+      "Czech Republic",
+      "Brno"
+    ],
+    "fun_fact": "The villa's iconic travertine wall can be lowered into the floor, creating a completely open living space that was revolutionary for its time.",
+    "learn_fact": "Villa Tugendhat was designed by Ludwig Mies van der Rohe and featured the first-ever use of chromium-plated steel frame construction in residential architecture. The villa was so ahead of its time that it remained largely unappreciated until it was restored and recognized as a UNESCO World Heritage site in 2001.",
+    "quiz_question": "Which famous architect designed Villa Tugendhat and pioneered the use of chromium-plated steel frame construction in residential buildings there?",
+    "quiz_answers": [
+      "Ludwig Mies van der Rohe",
+      "Le Corbusier",
+      "Walter Gropius",
+      "Richard Neutra"
+    ],
+    "quiz_correct": 0
+  },
+  {
+    "id": "wd_Q311341",
+    "name": "Al-Ahsa Oasis",
+    "country": "Saudi Arabia",
+    "lat": 25.429444,
+    "lng": 49.621944,
+    "category": "heritage",
+    "difficulty": 3,
+    "prompt": "This UNESCO World Heritage Site is one of the world's largest oases, famous for its thousands of palm trees and ancient irrigation system in the Arabian Peninsula's interior.",
+    "hints": [
+      "Western Asia",
+      "Eastern Saudi Arabia",
+      "A vast desert oasis with underground springs"
+    ],
+    "fun_fact": "Al-Ahsa Oasis contains approximately 2.5 million date palm trees and has been continuously inhabited for thousands of years.",
+    "learn_fact": "Al-Ahsa's unique irrigation system relies on ancient underground channels called 'qanats' that tap into natural springs, some dating back over 2,500 years. This engineering marvel allowed the oasis to flourish in one of Earth's harshest desert environments without modern pumping technology.",
+    "quiz_question": "What is the name of the ancient underground irrigation channels used in Al-Ahsa Oasis?",
+    "quiz_answers": [
+      "Qanats",
+      "Aflaj",
+      "Sabeel",
+      "Wadi"
+    ],
+    "quiz_correct": 0
+  }
+]
