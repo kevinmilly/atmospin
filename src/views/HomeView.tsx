@@ -15,7 +15,7 @@ import {
   VolumeX,
   WifiOff,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import { DifficultySelector } from '@/components/ui/DifficultySelector'
