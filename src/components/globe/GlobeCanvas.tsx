@@ -187,6 +187,7 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
   const handleChangeRef = useRef<(() => void) | null>(null)
   const labelFrameRef = useRef<number | null>(null)
   const lastLabelUpdateRef = useRef(0)
+  const lastZoomTierRef = useRef<import('@/types').ZoomTier>(1)
   const [countries, setCountries] = useState<CountryFeature[]>([])
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [labelViewpoint, setLabelViewpoint] = useState<GlobeViewpoint>({ lat: 20, lng: 0, altitude: 2.5 })
@@ -230,19 +231,30 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
       const pov = globe.pointOfView()
       if (!pov) return
 
-      const nextViewpoint = { lat: pov.lat, lng: pov.lng, altitude: pov.altitude ?? 2.5 }
-      setViewpoint(nextViewpoint)
+      const alt = pov.altitude ?? 2.5
+      const nextTier: import('@/types').ZoomTier = alt > 1.4 ? 1 : alt > 0.85 ? 2 : 3
 
+      // Only push to store when zoom tier actually changes — avoids per-frame React re-renders
+      if (nextTier !== lastZoomTierRef.current) {
+        lastZoomTierRef.current = nextTier
+        setViewpoint({ lat: pov.lat, lng: pov.lng, altitude: alt })
+      }
+
+      // Label viewpoint: throttled to ~11fps regardless
       const now = performance.now()
       if (now - lastLabelUpdateRef.current < 90) return
       lastLabelUpdateRef.current = now
 
       if (labelFrameRef.current !== null) cancelAnimationFrame(labelFrameRef.current)
       labelFrameRef.current = requestAnimationFrame(() => {
-        setLabelViewpoint(nextViewpoint)
+        setLabelViewpoint({ lat: pov.lat, lng: pov.lng, altitude: alt })
         labelFrameRef.current = null
       })
     }
+
+    // Clamp minimum zoom so users cannot enter ultra-close expensive range
+    // three-globe globe radius = 100; altitude 0.25 → distance ≈ 125
+    controls.minDistance = 125
 
     // Seed the initial zoom tier immediately
     handleChange()
@@ -339,13 +351,13 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
   }, [countries])
 
   const allLabels = useMemo<GlobeLabel[]>(() => {
+    // Hard (3) = "Continent shading, no text" | Expert (4) = "No labels at all"
+    if (difficulty >= 3) return []
     if (zoomTier < 2) return []
-    if (zoomTier >= 3) {
-      return difficulty <= 2
-        ? [...CONTINENT_LABELS, ...countryLabels, ...REGION_LABELS]
-        : [...CONTINENT_LABELS, ...REGION_LABELS]
-    }
-    return difficulty <= 2 ? [...CONTINENT_LABELS, ...countryLabels] : CONTINENT_LABELS
+    if (difficulty === 2) return CONTINENT_LABELS // Medium: continent names only
+    // Easy (1): full labels, more at close zoom
+    if (zoomTier >= 3) return [...CONTINENT_LABELS, ...countryLabels, ...REGION_LABELS]
+    return [...CONTINENT_LABELS, ...countryLabels]
   }, [countryLabels, difficulty, zoomTier])
 
   const visibleLabels = useMemo(() => {
@@ -415,7 +427,7 @@ export function GlobeCanvas({ onGlobeClick, pinPoint, correctPoint, interactive 
           polygonLabel={getPolygonLabel}
           polygonsTransitionDuration={300}
           onPolygonClick={handlePolygonClick}
-          onPolygonHover={handlePolygonHover}
+          onPolygonHover={difficulty >= 3 ? undefined : handlePolygonHover}
           onGlobeClick={handleGlobeClick}
           htmlElementsData={htmlPinData}
           htmlElement={(d: object) => {
