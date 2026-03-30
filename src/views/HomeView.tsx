@@ -15,7 +15,7 @@ import {
   VolumeX,
   WifiOff,
 } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { GlobeCanvas } from '@/components/globe/GlobeCanvas'
 import { DifficultySelector } from '@/components/ui/DifficultySelector'
@@ -26,7 +26,6 @@ import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useOffline } from '@/hooks/useOffline'
 import { getDailyKey } from '@/lib/daily'
 import { music } from '@/lib/music'
-import { fetchRandomPlace } from '@/lib/places'
 import { useOnboardingStore } from '@/store/onboarding'
 
 const HOOKS = [
@@ -50,7 +49,6 @@ export function HomeView() {
   const [showAuth, setShowAuth] = useState(false)
   const [muted, setMuted] = useState(() => music.isMuted)
   const [hookIndex, setHookIndex] = useState(0)
-  const [teaser, setTeaser] = useState<{ prompt: string } | null>(null)
 
   function toggleMusic() {
     const nowMuted = music.toggleMute()
@@ -72,10 +70,6 @@ export function HomeView() {
   useEffect(() => {
     const id = setInterval(() => setHookIndex(i => (i + 1) % HOOKS.length), 3500)
     return () => clearInterval(id)
-  }, [])
-
-  useEffect(() => {
-    fetchRandomPlace().then(p => setTeaser({ prompt: p.prompt })).catch(() => null)
   }, [])
 
   return (
@@ -183,6 +177,7 @@ export function HomeView() {
 
           <XPBar />
 
+          {/* Primary actions */}
           <div className="grid grid-cols-2 gap-3 w-full">
             <button
               onClick={() => goTo('/globe-spin')}
@@ -202,82 +197,56 @@ export function HomeView() {
             </button>
           </div>
 
-          <button
-            onClick={() => goTo('/globe-spin?mode=sprint')}
-            className="w-full flex items-center justify-between gap-3 rounded-2xl border border-indigo-600/50 bg-indigo-950/55 hover:bg-indigo-900/65 px-4 py-4 text-left text-white transition-colors shadow-[0_0_24px_rgba(79,70,229,0.18)]"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
-                <Timer className="w-5 h-5 text-indigo-300" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold">3-Round Sprint</p>
-                <p className="text-[11px] text-indigo-200/80">Fast run. Big finish. Better for one more go.</p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-indigo-300 shrink-0" />
-          </button>
+          {/* Difficulty — near the play buttons where it's relevant */}
+          <DifficultySelector />
 
-          <button
-            onClick={() => goTo('/globe-spin?mode=daily')}
-            className="w-full flex items-center justify-between gap-3 rounded-2xl border border-amber-600/50 bg-amber-950/45 hover:bg-amber-900/55 px-4 py-4 text-left text-white transition-colors shadow-[0_0_24px_rgba(217,119,6,0.14)]"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
-                <Globe className="w-5 h-5 text-amber-200" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold">Daily Challenge</p>
-                <p className="text-[11px] text-amber-100/80">Same 3 places for everyone today · {getDailyKey()}</p>
-              </div>
-            </div>
-            <ArrowRight className="w-4 h-4 text-amber-200 shrink-0" />
-          </button>
-
-          <p className="text-[10px] text-slate-500 text-center">3,000+ places across all 7 continents</p>
-
-          <AnimatePresence>
-            {teaser && (
-              <motion.button
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-                onClick={() => goTo('/globe-spin')}
-                className="w-full text-left bg-slate-800/70 hover:bg-slate-700/70 border border-slate-600/50 backdrop-blur-sm rounded-xl p-4 group transition-colors"
-              >
-                <p className="text-[10px] text-amber-400 font-semibold uppercase tracking-wide mb-1.5">
-                  Can you find this place?
-                </p>
-                <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
-                  "{teaser.prompt}"
-                </p>
-                <div className="flex items-center gap-1 mt-2 text-[10px] text-indigo-400 group-hover:text-indigo-300 transition-colors">
-                  Play to find out <ArrowRight className="w-3 h-3" />
+          {/* Secondary modes — slimmer, less visual weight */}
+          <div className="flex flex-col gap-2 w-full">
+            <button
+              onClick={() => goTo('/globe-spin?mode=sprint')}
+              className="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-700/50 bg-slate-900/50 hover:bg-slate-800/60 px-3 py-2.5 text-left text-white transition-colors"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Timer className="w-4 h-4 text-indigo-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-xs font-semibold">3-Round Sprint</span>
+                  <span className="text-[10px] text-slate-500 ml-2">Fast run · big finish</span>
                 </div>
-              </motion.button>
-            )}
-          </AnimatePresence>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            </button>
 
-          <div className="grid grid-cols-2 gap-2 w-full">
+            <button
+              onClick={() => goTo('/globe-spin?mode=daily')}
+              className="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-700/50 bg-slate-900/50 hover:bg-slate-800/60 px-3 py-2.5 text-left text-white transition-colors"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Globe className="w-4 h-4 text-amber-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-xs font-semibold">Daily Challenge</span>
+                  <span className="text-[10px] text-slate-500 ml-2">{getDailyKey()}</span>
+                </div>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            </button>
+          </div>
+
+          {/* Footer links — all utility nav in one row */}
+          <div className="flex items-center gap-3 flex-wrap justify-center pt-1">
             <button
               onClick={() => navigate('/leaderboard')}
-              className="flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-sm border border-slate-700/60 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-colors text-sm"
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
             >
-              <Trophy className="w-4 h-4" />
+              <Trophy className="w-3.5 h-3.5" />
               Scores
             </button>
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-sm border border-slate-700/60 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-colors text-sm"
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
             >
-              <LayoutDashboard className="w-4 h-4" />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               Progress
             </button>
-          </div>
-
-          <DifficultySelector />
-
-          <div className="flex items-center gap-4 flex-wrap justify-center pt-1">
             <button
               onClick={() => setShowOnboarding(true)}
               className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"

@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trophy, Target, Zap, Globe, Clock, TrendingUp, Star, Compass, Orbit } from 'lucide-react'
+import { ArrowLeft, Trophy, Target, Zap, Globe, Clock, TrendingUp, Star, Compass, Orbit, ChevronDown } from 'lucide-react'
 import { useAchievementsStore, ALL_ACHIEVEMENTS } from '@/store/achievements'
 import type { Achievement } from '@/store/achievements'
 import { useXpStore, getLevelInfo } from '@/store/xp'
@@ -121,6 +122,24 @@ export function DashboardView() {
   const masteryContinents = useMasteryStore(s => s.continents)
   const { current, next, xpIntoLevel, xpForLevel, progress } = getLevelInfo(totalXp)
 
+  // Achievement categories: open by default only if any are unlocked
+  const [openCategories, setOpenCategories] = useState<Set<string>>(() => {
+    const open = new Set<string>()
+    for (const cat of CATEGORY_ORDER) {
+      const achievements = ALL_ACHIEVEMENTS.filter(a => a.category === cat)
+      if (achievements.some(a => unlockedIds.includes(a.id))) open.add(cat)
+    }
+    return open
+  })
+
+  function toggleCategory(cat: string) {
+    setOpenCategories(prev => {
+      const next = new Set(prev)
+      next.has(cat) ? next.delete(cat) : next.add(cat)
+      return next
+    })
+  }
+
   const avg = stats.totalRounds > 0 ? Math.round(stats.totalScore / stats.totalRounds) : 0
   const unlockedCount = unlockedIds.length
   const masteryEntries = getMasteryEntries(masteryContinents)
@@ -179,7 +198,17 @@ export function DashboardView() {
               />
             </div>
           </div>
-          <p className="text-xs text-slate-500">{totalXp.toLocaleString()} total XP earned</p>
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>{totalXp.toLocaleString()} total XP</span>
+            <span>{unlockedCount}/{ALL_ACHIEVEMENTS.length} achievements</span>
+          </div>
+          {/* Achievement progress — inline here, no separate section needed */}
+          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-indigo-600 to-violet-500 rounded-full transition-all duration-700"
+              style={{ width: `${(unlockedCount / ALL_ACHIEVEMENTS.length) * 100}%` }}
+            />
+          </div>
         </section>
 
         {/* Stats grid */}
@@ -229,19 +258,7 @@ export function DashboardView() {
           )}
 
           <div className="grid grid-cols-1 gap-2">
-            {masteryEntries.map(entry => {
-              if (entry.roundsPlayed === 0) {
-                return (
-                  <div key={entry.continent} className="rounded-xl border border-slate-800/70 bg-slate-900/35 p-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-300">{entry.continent}</p>
-                      <p className="text-[11px] text-slate-600">No mastery data yet</p>
-                    </div>
-                    <span className="text-[11px] text-slate-500 uppercase tracking-wide">Explore</span>
-                  </div>
-                )
-              }
-
+            {masteryEntries.filter(e => e.roundsPlayed > 0).map(entry => {
               const avgScore = Math.round(entry.totalScore / entry.roundsPlayed)
               const avgDistance = Math.round(entry.totalDistanceKm / entry.roundsPlayed)
               return (
@@ -255,20 +272,11 @@ export function DashboardView() {
                 />
               )
             })}
-          </div>
-        </section>
-
-        {/* Progress bar */}
-        <section>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Achievement Progress</h2>
-            <span className="text-xs text-indigo-400 font-semibold">{unlockedCount}/{ALL_ACHIEVEMENTS.length}</span>
-          </div>
-          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-indigo-600 to-violet-500 rounded-full transition-all duration-700"
-              style={{ width: `${(unlockedCount / ALL_ACHIEVEMENTS.length) * 100}%` }}
-            />
+            {masteryEntries.filter(e => e.roundsPlayed === 0).length > 0 && (
+              <p className="text-[11px] text-slate-600 text-center py-1">
+                {masteryEntries.filter(e => e.roundsPlayed === 0).length} continent{masteryEntries.filter(e => e.roundsPlayed === 0).length > 1 ? 's' : ''} not yet explored
+              </p>
+            )}
           </div>
         </section>
 
@@ -298,27 +306,37 @@ export function DashboardView() {
           </section>
         )}
 
-        {/* Achievements by category */}
+        {/* Achievements by category — collapsible */}
         {CATEGORY_ORDER.map(category => {
           const categoryAchievements = ALL_ACHIEVEMENTS.filter(a => a.category === category)
+          const unlockedInCat = categoryAchievements.filter(a => unlockedSet.has(a.id)).length
+          const isOpen = openCategories.has(category)
           return (
             <section key={category}>
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                {CATEGORY_LABELS[category]}
-                <span className="ml-2 text-slate-700 font-normal">
-                  {categoryAchievements.filter(a => unlockedSet.has(a.id)).length}/{categoryAchievements.length}
-                </span>
-              </h2>
-              <div className="space-y-2">
-                {categoryAchievements.map(achievement => (
-                  <AchievementCard
-                    key={achievement.id}
-                    achievement={achievement}
-                    unlocked={unlockedSet.has(achievement.id)}
-                    unlockedDate={unlockedDates[achievement.id]}
-                  />
-                ))}
-              </div>
+              <button
+                onClick={() => toggleCategory(category)}
+                className="w-full flex items-center justify-between mb-2 group"
+              >
+                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-400 transition-colors">
+                  {CATEGORY_LABELS[category]}
+                  <span className="ml-2 text-slate-700 font-normal">
+                    {unlockedInCat}/{categoryAchievements.length}
+                  </span>
+                </h2>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-600 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isOpen && (
+                <div className="space-y-2">
+                  {categoryAchievements.map(achievement => (
+                    <AchievementCard
+                      key={achievement.id}
+                      achievement={achievement}
+                      unlocked={unlockedSet.has(achievement.id)}
+                      unlockedDate={unlockedDates[achievement.id]}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           )
         })}
